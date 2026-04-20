@@ -1,0 +1,19 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# netlify.toml — Configuración de TeamFlow para Netlify
+# ─────────────────────────────────────────────────────────────────────────────
+
+[build]
+  functions = "netlify/functions"
+  publish   = "."
+
+# Redirect para que /api/slack apunte a la función proxy
+[[redirects]]
+  from   = "/api/slack"
+  to     = "/.netlify/functions/slack"
+  status = 200
+
+# Función programada — corre cada 5 minutos en los servidores de Netlify.
+# Verifica si es hora de enviar el reporte matutino o vespertino
+# y lo manda a Slack sin necesitar que nadie tenga la app abierta.
+[functions."reports"]
+  schedule = "*/5 * * * *"

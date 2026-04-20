@@ -1,0 +1,1598 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Onbordea Tasks</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+</head>
+<body>
+<style>
+/* ══ Reset ══ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #root { width: 100%; height: 100%; overflow: hidden; }
+body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
+
+/* ══ Design tokens ══ */
+:root {
+  --blue: #1a73e8;
+  --blue-light: #e8f0fe;
+  --blue-hover: #1557b0;
+  --gray: #5f6368;
+  --gray-light: #f8f9fa;
+  --gray-mid: #f1f3f4;
+  --border: #dadce0;
+  --error: #d93025;
+  --success: #1e8e3e;
+  --purple: #9334e6;
+  --gold: #f9ab00;
+  --orange: #e65100;
+  --text-primary: #202124;
+  --text-secondary: #5f6368;
+  --text-tertiary: #9aa0a6;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-pill: 20px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
+  --shadow-lg: 0 10px 40px rgba(0,0,0,0.2);
+  --font: "Google Sans", Roboto, Arial, sans-serif;
+  /* sidebar brand band */
+  --brand-bg: #0d1b2a;
+}
+
+/* ══ Animations ══ */
+.fade-up  { animation: fadeUp  0.18s ease-out; }
+.fade-in  { animation: fadeIn  0.15s ease-out; }
+/* FIX: panel uses CSS transition on width instead of mount/unmount to prevent layout shift */
+@keyframes fadeUp { from { opacity:0; transform:translateY(6px) scale(0.98); } to { opacity:1; transform:none; } }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+/* ══ Scrollbar ══ */
+::-webkit-scrollbar { width:4px; height:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:#d1d5db; border-radius:10px; }
+::-webkit-scrollbar-thumb:hover { background:#9ca3af; }
+
+/* ══ Layout — flex root, no overflow ever ══
+   FIX: The thread panel bug was caused by the panel being mounted/unmounted,
+   which left the flex container at its old computed width for one frame,
+   causing a horizontal scroll flash. Solution: always render the panel wrapper
+   but animate its width via CSS transition. The overflow:hidden on both root
+   and panel-wrapper prevents any bleed. ══ */
+.app-root {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;  /* hard stop — nothing escapes this */
+  font-family: var(--font);
+  color: var(--text-primary);
+}
+.app-main {
+  flex: 1;
+  min-width: 0;       /* lets flex child shrink below content width */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+/* Panel wrapper: always in DOM, width animated — no layout jump on close */
+.panel-wrapper {
+  flex-shrink: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.2s cubic-bezier(0.4,0,0.2,1);
+  /* When closed: width 0, hidden. When open: width set inline by React state. */
+}
+.panel-wrapper.closed { width: 0 !important; }
+.panel-inner {
+  /* Inner has the real width so content doesn't collapse weirdly */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ══ Sidebar brand band ══ */
+.sb-brand {
+  background: var(--brand-bg);
+  padding: 14px 14px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  min-height: 56px;
+}
+.sb-brand-logo {
+  height: 28px;
+  width: auto;
+  object-fit: contain;
+  /* Logo is white — renders correctly on dark bg */
+}
+.sb-brand-collapsed { justify-content: center; }
+
+/* ══ Sidebar items ══ */
+.sb-item {
+  border-radius: var(--radius-md);
+  margin: 0 4px 1px;
+  transition: background 0.1s;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+.sb-item:hover { background: rgba(0,0,0,0.05) !important; }
+.sb-item.active { background: rgba(26,115,232,0.1) !important; color: var(--blue); font-weight: 500; }
+.sb-item:hover .list-actions { opacity: 1 !important; }
+
+/* ══ Task rows ══ */
+.task-row { transition: background 0.15s; }
+.task-row .task-actions { opacity:0; transition:opacity 0.12s; }
+.task-row:hover .task-actions { opacity:1; }
+.task-row:hover { background: var(--gray-light) !important; }
+
+/* ══ Tooltips ══ */
+.tip { position: relative; display: inline-flex; }
+.tip::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 6px); left: 50%;
+  transform: translateX(-50%);
+  background: #323232; color: #fff; font-size: 11px;
+  white-space: nowrap; padding: 4px 8px; border-radius: var(--radius-sm);
+  pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 9000;
+  font-family: var(--font);
+}
+.tip:hover::after { opacity: 1; }
+
+/* ══ Day chips ══ */
+.day-chip {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 1px solid var(--border); background: #fff;
+  cursor: pointer; font-size: 12px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.1s; user-select: none;
+}
+.day-chip.on { background: var(--blue); color: #fff; border-color: var(--blue); }
+.day-chip:hover:not(.on) { background: var(--blue-light); border-color: var(--blue); }
+
+/* ══ Buttons — unified system ══ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 7px 14px; border-radius: var(--radius-md); border: 1px solid var(--border);
+  background: #fff; color: var(--text-secondary);
+  font-size: 13px; font-weight: 500; font-family: var(--font);
+  cursor: pointer; transition: all 0.12s; line-height: 1;
+  white-space: nowrap;
+}
+.btn:hover { background: var(--gray-light); border-color: #bdc1c6; }
+.btn-primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+.btn-primary:hover { background: var(--blue-hover); border-color: var(--blue-hover); }
+.btn-ghost { border-color: transparent; background: transparent; }
+.btn-ghost:hover { background: rgba(0,0,0,0.06); border-color: transparent; }
+.btn-danger { background: #fce8e6; color: var(--error); border-color: #f5c6c3; }
+.btn-danger:hover { background: #f5c6c3; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-pill { border-radius: var(--radius-pill); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ══ Icon button ══ */
+.icon-btn {
+  border: none; background: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-md); transition: background 0.1s;
+  color: var(--gray);
+}
+.icon-btn:hover { background: rgba(0,0,0,0.07); }
+.icon-btn.active { background: var(--blue-light); color: var(--blue); }
+
+/* ══ Badges ══ */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 7px; border-radius: var(--radius-pill);
+  font-size: 10px; font-weight: 600; line-height: 1.4;
+}
+
+/* ══ Tag chips ══ */
+.tag-chip {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 8px; border-radius: var(--radius-pill);
+  font-size: 10px; font-weight: 600; cursor: pointer;
+  transition: filter 0.1s;
+}
+.tag-chip:hover { filter: brightness(0.92); }
+
+/* ══ Search bar ══ */
+.search-wrap {
+  display: flex; align-items: center; gap: 7px;
+  padding: 5px 11px;
+  background: var(--gray-light); border-radius: var(--radius-pill);
+  border: 1px solid var(--border); transition: all 0.15s;
+}
+.search-wrap:focus-within {
+  border-color: var(--blue); background: #fff;
+  box-shadow: 0 0 0 3px rgba(26,115,232,0.1);
+}
+.search-wrap input {
+  border: none; background: transparent; outline: none;
+  font-size: var(--font-size-base); flex: 1; font-family: var(--font);
+  color: var(--text-primary); min-width: 0;
+}
+.search-wrap input::placeholder { color: var(--text-tertiary); }
+
+/* ══ Context banner ══ */
+.ctx-banner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 20px; background: #fffbeb;
+  border-bottom: 1px solid #fde68a;
+  font-size: 12px; color: #92400e; flex-shrink: 0;
+  font-weight: 500;
+}
+
+/* ══ Chat bubbles ══ */
+.bubble-me    { background: #dcf8c6; border-radius: 16px 16px 4px 16px; }
+.bubble-other { background: #fff;    border-radius: 16px 16px 16px 4px; }
+
+/* ══ Misc ══ */
+input[type="checkbox"] { cursor: pointer; accent-color: var(--blue); }
+input[type="date"], input[type="time"] { cursor: pointer; }
+input:not([type="checkbox"]):not([type="color"]):not([type="date"]):not([type="time"]):not([type="number"]):not([type="radio"]),
+textarea, select {
+  font-family: var(--font);
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
+}
+.inv-code {
+  font-family: monospace; letter-spacing: 0.12em;
+  background: var(--gray-mid); border-radius: var(--radius-md);
+  padding: 4px 10px; font-size: 13px; cursor: pointer;
+  border: 1px solid var(--border);
+}
+.inv-code:hover { background: var(--blue-light); border-color: var(--blue); }
+.team-card { transition: all 0.18s; }
+.team-card:hover { box-shadow: var(--shadow-md) !important; transform: translateY(-2px); }
+.sb-list-item .sb-list-actions { opacity:0; transition:opacity 0.12s; }
+.sb-list-item:hover .sb-list-actions { opacity:1; }
+</style>
+
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, set, get, onValue, push, remove, update }
+  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const { useState, useEffect, useMemo, useRef, useCallback } = React;
+
+/* ══ LOGO ══ */
+const LOGO_SRC = 'data:image/webp;base64,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';
+
+/* ══ FIREBASE ══ */
+const db = getDatabase(initializeApp({
+  apiKey:"AIzaSyDQVAem7IJmKRLvOxSVugGDXTz1z9K0dao",
+  authDomain:"teamflow-67eff.firebaseapp.com",
+  databaseURL:"https://teamflow-67eff-default-rtdb.firebaseio.com",
+  projectId:"teamflow-67eff",
+  storageBucket:"teamflow-67eff.firebasestorage.app",
+  messagingSenderId:"549075489473",
+  appId:"1:549075489473:web:9e408ac8776215105e3a40",
+}));
+const DB_TASKS='v3_tasks', DB_USERS='v3_users', DB_COMMENTS='v3_comments',
+      DB_CONFIG='v3_config', DB_INVITES='v3_invites', DB_LISTS='v3_lists';
+
+/* ══ SLACK — el token vive en variables de entorno de Netlify, nunca en el frontend ══
+   Canales activos:
+   - SLACK_TODOLIST_CH : reportes matutino y vespertino del equipo
+   - DMs por Member ID : asignación de tarea, cambios de estado y comentarios en tareas cruzadas
+   El canal #log fue eliminado; las acciones propias no generan notificaciones públicas.
+══ */
+const SLACK_TOKEN       = '';           // ya no se usa desde el browser
+const SLACK_TODOLIST_CH = 'C0ARH1FC4V9';
+
+/* ══ CONSTANTS ══ */
+const PRIORITY = {
+  high:  { label:'ALTA',  color:'#d93025', bg:'#fce8e6', emoji:'🔴', weight:3 },
+  medium:{ label:'MEDIA', color:'#f9ab00', bg:'#fef7e0', emoji:'🟡', weight:2 },
+  low:   { label:'BAJA',  color:'#1a73e8', bg:'#e8f0fe', emoji:'🔵', weight:1 },
+};
+const STATUS = {
+  wip:      { label:'En progreso',   color:'#1a73e8', bg:'#e8f0fe' },
+  delayed:  { label:'Demorada',      color:'#d93025', bg:'#fce8e6' },
+  info:     { label:'Necesita info', color:'#9334e6', bg:'#f3e8ff' },
+  pending:  { label:'Pendiente',     color:'#5f6368', bg:'#f1f3f4' },
+  completed:{ label:'Completada',    color:'#1e8e3e', bg:'#e6f4ea' },
+};
+const REMINDER_OPTS = [
+  {v:0,l:'Sin recordatorio'},{v:900000,l:'15 minutos antes'},{v:1800000,l:'30 minutos antes'},
+  {v:3600000,l:'1 hora antes'},{v:7200000,l:'2 horas antes'},{v:10800000,l:'3 horas antes'},
+  {v:14400000,l:'4 horas antes'},{v:18000000,l:'5 horas antes'},{v:86400000,l:'1 día antes'},
+];
+const DAY_LABELS = ['D','L','M','X','J','V','S'];
+const DAY_NAMES  = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+const ORDINALS   = [{v:'first',l:'Primer'},{v:'second',l:'Segundo'},{v:'third',l:'Tercer'},{v:'fourth',l:'Cuarto'},{v:'last',l:'Último'}];
+
+// Default tag colors
+const TAG_PALETTE = ['#4285f4','#ea4335','#34a853','#fbbc04','#9334e6','#e65100','#00838f','#ad1457'];
+
+/* ══ HELPERS ══ */
+const smartDate = (ts, noExpiry) => {
+  if (noExpiry) return 'Sin vencimiento';
+  if (!ts) return '';
+  const now=Date.now(), diff=ts-now, d=new Date(ts);
+  const time=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  if (diff<0) { const ago=Math.abs(diff); if(ago<3600000)return`Venció hace ${Math.floor(ago/60000)}m`; if(ago<86400000)return`Venció hace ${Math.floor(ago/3600000)}h`; return`Venció ${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')} ${time}`; }
+  if (diff<3600000){const h=Math.floor(diff/3600000),m=Math.floor((diff%3600000)/60000);return`${h}h ${m}m`;}
+  const tom=new Date();tom.setDate(tom.getDate()+1);
+  if(d.toDateString()===new Date().toDateString())return`Hoy ${time}`;
+  if(d.toDateString()===tom.toDateString())return`Mañana ${time}`;
+  return`${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')} ${time}`;
+};
+const fullDate = ts => !ts?'Sin fecha':new Date(ts).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+const createdLabel = ts => { if(!ts)return''; const d=new Date(ts),time=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); if(d.toDateString()===new Date().toDateString())return`Creada hoy a ${time}`; return`Creada ${DAY_NAMES[d.getDay()]} ${d.getDate()} a ${time}`; };
+const fmtTs = ts => { if(!ts)return''; const d=new Date(ts); return d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); };
+const todayStr  = () => new Date().toISOString().split('T')[0];
+const genCode   = () => Math.random().toString(36).slice(2,8).toUpperCase();
+const notifSeen = (id,type) => { const k=`tf7_${id}_${type}`; if(localStorage.getItem(k))return true; localStorage.setItem(k,'1'); return false; };
+
+/* ══ RECURRENCE ══ */
+const calcNextTs = (rec,fromTs) => {
+  if(!rec||rec.type==='none')return null;
+  const d=new Date(fromTs||Date.now()),interval=Math.max(1,rec.interval||1);
+  if(rec.type==='daily'){d.setDate(d.getDate()+interval);}
+  else if(rec.type==='weekly'){const days=rec.daysOfWeek?.length?[...rec.daysOfWeek].sort():[d.getDay()];d.setDate(d.getDate()+1);for(let i=0;i<7*(interval+1);i++){if(days.includes(d.getDay()))break;d.setDate(d.getDate()+1);}}
+  else if(rec.type==='monthly'){d.setMonth(d.getMonth()+interval);if(rec.monthlyType==='day'){d.setDate(Math.min(rec.monthDay||1,new Date(d.getFullYear(),d.getMonth()+1,0).getDate()));}else if(rec.monthlyType==='weekday'){const wd=rec.weekday??1,ord=rec.ordinal||'first';if(ord==='last'){const last=new Date(d.getFullYear(),d.getMonth()+1,0);while(last.getDay()!==wd)last.setDate(last.getDate()-1);d.setDate(last.getDate());}else{const om={first:1,second:2,third:3,fourth:4};let cnt=0,cur=new Date(d.getFullYear(),d.getMonth(),1);while(cnt<(om[ord]||1)){if(cur.getDay()===wd)cnt++;if(cnt<(om[ord]||1))cur.setDate(cur.getDate()+1);}d.setDate(cur.getDate());}}}
+  else if(rec.type==='specific'&&rec.specificDate){const sd=new Date(rec.specificDate+'T'+(rec.time||'09:00')+':00');return sd.getTime()>fromTs?sd.getTime():null;}
+  if(rec.time){const[h,m]=rec.time.split(':').map(Number);d.setHours(h,m,0,0);}
+  return d.getTime();
+};
+const recLabel = rec => {
+  if(!rec||rec.type==='none')return null;
+  if(rec.type==='daily')return`Cada ${rec.interval||1} día${(rec.interval||1)>1?'s':''}`;
+  if(rec.type==='weekly')return`Semanal${rec.daysOfWeek?.length?` (${rec.daysOfWeek.map(d=>DAY_LABELS[d]).join(' ')})` :''}`;
+  if(rec.type==='monthly')return'Mensual';
+  if(rec.type==='specific')return'Fecha específica';
+  return null;
+};
+
+/* ══ SLACK ══ */
+/* ══ SLACK — proxy via Netlify Function ══
+   El bot token vive en las vars de entorno del servidor.
+   El parámetro `token` se mantiene en la firma para compatibilidad,
+   pero ya no se usa desde el browser. ══ */
+const postSlack = async(token,channel,text) => {
+  if(!channel||!text)return;
+  try{
+    const r=await fetch('/api/slack',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({channel,text})
+    });
+    if(!r.ok){console.warn('Slack proxy HTTP error:',r.status);return;}
+    const d=await r.json();
+    if(!d.ok)console.warn('Slack API error:',d.error,'| canal:',channel);
+  }catch(e){
+    console.warn('Slack proxy error:',e);
+  }
+};
+
+/* ── DM functions (mensajes privados directos por Member ID) ──
+   Reglas:
+   1. notifyAssigneeDM  → cuando alguien te asigna una tarea nueva
+   2. notifyCreatorDM   → cuando alguien modifica (estado/comentario/reasignación)
+                          una tarea que vos creaste y no es tu propia acción
+   Las acciones que un usuario hace sobre sus propias tareas NO generan notificaciones.
+── */
+const fmtTime = ts => new Date(ts||Date.now()).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})+'hs';
+
+const notifyAssigneeDM = (token,memberId,task,creator) => {
+  if(!memberId)return;
+  const p=PRIORITY[task.priority]||PRIORITY.medium;
+  const due=task.noExpiry?'Sin vencimiento':`Vence a las ${fmtTime(task.dueTimestamp)}`;
+  let msg=`📋 *${creator} te asignó una tarea*\n*${task.title}*\nPrioridad: ${p.emoji} ${p.label}   |   ${due}`;
+  if(task.description)msg+=`\n_${task.description}_`;
+  postSlack(token,memberId,msg);
+};
+
+const notifyCreatorDM = (token,memberId,task,actor,evType,detail) => {
+  if(!memberId)return;
+  let msg;
+  if(evType==='status'){
+    if(detail==='completed'){
+      msg=`✅ *${actor} completó tu tarea: ${task.title}*\nHora: ${fmtTime(Date.now())}`;
+    } else {
+      msg=`🔄 *${actor} cambió el estado de tu tarea*\n*${task.title}*\n${STATUS[detail]?.label||detail}`;
+    }
+  } else if(evType==='comment'){
+    /* Muestra las primeras 2 líneas del comentario */
+    const firstLines=String(detail).split('\n').slice(0,2).join('\n');
+    msg=`💬 *${actor} escribió en tu tarea: ${task.title}*\n"${firstLines}"`;
+  } else if(evType==='reassign'){
+    msg=`🔀 *${actor} reasignó tu tarea*\n*${task.title}*\n@${detail.from} → @${detail.to}`;
+  }
+  if(msg)postSlack(token,memberId,msg);
+};
+
+/* ── Helpers internos para notificar al creador ── */
+const _notifyCreator = (token,userMap,task,actor,evType,detail) => {
+  /* Solo notifica si el actor NO es el creador de la tarea */
+  if(!task.addedBy||task.addedBy===actor)return;
+  const ce=Object.values(userMap).find(u=>u.displayName===task.addedBy);
+  if(ce?.slackMemberId)notifyCreatorDM(token,ce.slackMemberId,task,actor,evType,detail);
+};
+
+/* ── Reportes (solo #todolist, una vez por tipo por día) ──
+   FIX: usa fecha local (no UTC) para la clave del día, evitando
+   que en Argentina (UTC-3) el rollover UTC a las 21hs local
+   rompa la deduplicación del reporte nocturno.
+   Lógica: si el reporte del día ya fue enviado y se reconfigura
+   un horario posterior, no se reenvía hoy → se envía al día siguiente.
+── */
+const _localDateKey = () => {
+  const d=new Date();
+  return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
+const checkReports = async(cfg,tasks,users,dbRef) => {
+  const sched=cfg?.reportSchedule;
+  if(!sched||!dbRef)return;
+  const now=new Date(),nowMin=now.getHours()*60+now.getMinutes();
+  const key=_localDateKey();
+  const sentSnap=await get(ref(dbRef,`v3_report_sent/${key}`));
+  const sent=sentSnap.val()||{};
+
+  const buildMorning=()=>{
+    const n=Date.now();
+    const lines=[`📊 *Reporte Matutino — ${new Date().toLocaleDateString('es-AR',{weekday:'long',day:'2-digit',month:'long'})}*`,'━━━━━━━━━━━━━━━━'];
+    users.forEach(u=>{
+      const ut=tasks.filter(t=>t.assignedTo===u);
+      lines.push(`👤 *${u}*: 🟢 ${ut.filter(t=>(t.noExpiry||t.dueTimestamp>=n)&&t.status!=='completed').length} vigentes  |  🔴 ${ut.filter(t=>!t.noExpiry&&t.dueTimestamp<n&&t.status!=='completed').length} vencidas  |  ✅ ${ut.filter(t=>t.status==='completed').length} completadas`);
+    });
+    return lines.join('\n');
+  };
+  const buildAfternoon=()=>{
+    const n=Date.now(),tod=new Date();tod.setHours(0,0,0,0);const todTs=tod.getTime();
+    const lines=[`🌆 *Reporte Vespertino — ${new Date().toLocaleDateString('es-AR',{weekday:'long',day:'2-digit',month:'long'})}*`,'━━━━━━━━━━━━━━━━'];
+    users.forEach(u=>{
+      const ut=tasks.filter(t=>t.assignedTo===u);
+      lines.push(`👤 *${u}*: ✅ ${ut.filter(t=>t.status==='completed'&&(t.statusLog||[]).some(l=>l.to==='completed'&&l.timestamp>=todTs)).length} hoy  |  ❌ ${ut.filter(t=>!t.noExpiry&&t.dueTimestamp>=todTs&&t.dueTimestamp<n&&t.status!=='completed').length} vencidas hoy  |  📋 ${ut.filter(t=>t.status!=='completed').length} pendientes`);
+    });
+    return lines.join('\n');
+  };
+
+  /* Matutino: ventana de 1 minuto exacto en el horario configurado, una sola vez por día */
+  if(sched.morningEnabled&&sched.morningTime&&!sent.morning){
+    const[h,m]=sched.morningTime.split(':').map(Number);
+    if(nowMin>=h*60+m&&nowMin<h*60+m+1){
+      await update(ref(dbRef,`v3_report_sent/${key}`),{morning:true,morningAt:nowMin});
+      postSlack(SLACK_TOKEN,SLACK_TODOLIST_CH,buildMorning());
+    }
+  }
+  /* Vespertino: ídem, y solo si el matutino ya fue enviado (o está desactivado) */
+  if(sched.afternoonEnabled&&sched.afternoonTime&&!sent.afternoon){
+    const[h,m]=sched.afternoonTime.split(':').map(Number);
+    if(nowMin>=h*60+m&&nowMin<h*60+m+1){
+      await update(ref(dbRef,`v3_report_sent/${key}`),{afternoon:true,afternoonAt:nowMin});
+      postSlack(SLACK_TOKEN,SLACK_TODOLIST_CH,buildAfternoon());
+    }
+  }
+};
+
+/* ══ UI ATOMS ══ */
+const Tooltip = ({tip,children,style={}}) => {
+  const [pos,setPos]=useState(null);
+  const show=e=>{const r=e.currentTarget.getBoundingClientRect();setPos({x:r.left+r.width/2,y:r.top});};
+  const hide=()=>setPos(null);
+  return React.createElement(React.Fragment,null,
+    React.createElement('div',{style:{...style,position:'relative',display:'inline-flex'},onMouseEnter:show,onMouseLeave:hide},children),
+    pos&&ReactDOM.createPortal(
+      React.createElement('div',{style:{position:'fixed',left:pos.x,top:pos.y-6,transform:'translate(-50%,-100%)',background:'#323232',color:'#fff',fontSize:'11px',whiteSpace:'nowrap',padding:'4px 8px',borderRadius:'4px',pointerEvents:'none',zIndex:99999,fontFamily:'var(--font)',boxShadow:'0 2px 8px rgba(0,0,0,0.25)'}},tip),
+      document.body
+    )
+  );
+};
+
+const Btn = ({children,variant='',size='',className='',onClick,disabled,style={},...p}) =>
+  React.createElement('button',{className:`btn${variant?` btn-${variant}`:''}${size?` btn-${size}`:''}${className?` ${className}`:''}`,onClick,disabled,style,...p},children);
+
+/* ══ RECURRENCE PANEL ══ */
+function RecurrencePanel({value,onChange,onClose}){
+  const def={type:'daily',interval:1,daysOfWeek:[],monthlyType:'day',monthDay:1,ordinal:'first',weekday:1,time:'',startDate:todayStr(),endType:'never',endDate:'',endCount:30,specificDate:'',specificTime:'09:00'};
+  const [r,setR]=useState({...def,...(value||{})});
+  const upd=u=>setR(p=>({...p,...u}));
+  const ss={padding:'6px 8px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',fontSize:'13px',cursor:'pointer',outline:'none',fontFamily:'var(--font)'};
+  const numI=(v,cb,mn=1,mx=99)=>React.createElement('input',{type:'number',min:mn,max:mx,value:v,onChange:e=>cb(Math.max(mn,Math.min(mx,parseInt(e.target.value)||mn))),style:{width:'52px',...ss,textAlign:'center'}});
+  const lbl=t=>React.createElement('div',{style:{fontSize:'11px',fontWeight:'700',color:'var(--gray)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'5px'}},t);
+  return React.createElement('div',{className:'fade-up',style:{position:'absolute',top:'calc(100% + 4px)',left:0,zIndex:500,width:'320px',background:'#fff',border:'1px solid var(--border)',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-md)',padding:'18px'}},
+    React.createElement('div',{style:{display:'flex',gap:'4px',marginBottom:'14px',background:'var(--gray-light)',borderRadius:'var(--radius-lg)',padding:'3px'}},
+      ['daily','weekly','monthly','specific'].map(t=>React.createElement('button',{key:t,onClick:()=>upd({type:t}),style:{flex:1,padding:'5px 2px',border:'none',borderRadius:'var(--radius-md)',cursor:'pointer',fontSize:'11px',fontWeight:'600',background:r.type===t?'#fff':'transparent',color:r.type===t?'var(--blue)':'var(--gray)',boxShadow:r.type===t?'0 1px 4px rgba(0,0,0,0.12)':'none',transition:'all 0.12s'}},{daily:'Diario',weekly:'Semanal',monthly:'Mensual',specific:'Específico'}[t]))
+    ),
+    r.type==='daily'&&React.createElement('div',{style:{marginBottom:'12px'}},lbl('Se repite cada'),React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'8px'}},numI(r.interval,v=>upd({interval:v})),React.createElement('span',{style:{fontSize:'13px',color:'var(--gray)'}},`día${(r.interval||1)>1?'s':''}`))),
+    r.type==='weekly'&&React.createElement('div',{style:{marginBottom:'12px'}},lbl('Se repite cada'),React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'8px',marginBottom:'10px'}},numI(r.interval,v=>upd({interval:v})),React.createElement('span',{style:{fontSize:'13px',color:'var(--gray)'}},`semana${(r.interval||1)>1?'s':''}`)),React.createElement('div',{style:{display:'flex',gap:'4px'}},[1,2,3,4,5,6,0].map(d=>React.createElement('div',{key:d,className:`day-chip${(r.daysOfWeek||[]).includes(d)?' on':''}`,onClick:()=>{const days=r.daysOfWeek||[];upd({daysOfWeek:days.includes(d)?days.filter(x=>x!==d):[...days,d]});}},DAY_LABELS[d])))),
+    r.type==='monthly'&&React.createElement('div',{style:{marginBottom:'12px'}},lbl('Se repite cada'),React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'8px',marginBottom:'10px'}},numI(r.interval,v=>upd({interval:v})),React.createElement('span',{style:{fontSize:'13px',color:'var(--gray)'}},`mes${(r.interval||1)>1?'es':''}`)),React.createElement('label',{style:{display:'flex',alignItems:'center',gap:'8px',marginBottom:'8px',cursor:'pointer'}},React.createElement('input',{type:'radio',checked:r.monthlyType==='day',onChange:()=>upd({monthlyType:'day'})}),React.createElement('span',{style:{fontSize:'13px'}},'Día'),React.createElement('select',{value:r.monthDay||1,onChange:e=>upd({monthDay:parseInt(e.target.value),monthlyType:'day'}),style:{...ss,width:'70px'}},Array.from({length:31},(_,i)=>React.createElement('option',{key:i+1,value:i+1},i+1)))),React.createElement('label',{style:{display:'flex',alignItems:'center',gap:'8px',cursor:'pointer'}},React.createElement('input',{type:'radio',checked:r.monthlyType==='weekday',onChange:()=>upd({monthlyType:'weekday'})}),React.createElement('select',{value:r.ordinal||'first',onChange:e=>upd({ordinal:e.target.value,monthlyType:'weekday'}),style:ss},ORDINALS.map(o=>React.createElement('option',{key:o.v,value:o.v},o.l))),React.createElement('select',{value:r.weekday??1,onChange:e=>upd({weekday:parseInt(e.target.value),monthlyType:'weekday'}),style:ss},[1,2,3,4,5,6,0].map(d=>React.createElement('option',{key:d,value:d},DAY_NAMES[d].charAt(0).toUpperCase()+DAY_NAMES[d].slice(1)))))),
+    r.type==='specific'&&React.createElement('div',{style:{marginBottom:'12px'}},lbl('Fecha específica'),React.createElement('div',{style:{display:'flex',gap:'8px',flexWrap:'wrap'}},React.createElement('input',{type:'date',value:r.specificDate||'',onChange:e=>upd({specificDate:e.target.value}),style:ss}),React.createElement('input',{type:'time',value:r.specificTime||'09:00',onChange:e=>upd({specificTime:e.target.value}),style:ss}))),
+    r.type!=='specific'&&React.createElement('div',{style:{marginBottom:'12px'}},lbl('Hora'),React.createElement('input',{type:'time',value:r.time||'',onChange:e=>upd({time:e.target.value}),style:{...ss,width:'100%',color:r.time?'var(--text-primary)':'var(--gray)'}})),
+    r.type!=='specific'&&React.createElement('div',{style:{marginBottom:'12px'}},lbl('Comienza'),React.createElement('input',{type:'date',value:r.startDate||todayStr(),onChange:e=>upd({startDate:e.target.value}),style:{...ss,width:'100%'}})),
+    r.type!=='specific'&&React.createElement('div',{style:{marginBottom:'14px'}},lbl('Finaliza'),['never','date','count'].map(et=>React.createElement('label',{key:et,style:{display:'flex',alignItems:'center',gap:'8px',marginBottom:'6px',cursor:'pointer'}},React.createElement('input',{type:'radio',name:'recEnd',checked:r.endType===et,onChange:()=>upd({endType:et})}),et==='never'&&React.createElement('span',{style:{fontSize:'13px'}},'Nunca'),et==='date'&&React.createElement(React.Fragment,null,React.createElement('span',{style:{fontSize:'13px'}},'El'),r.endType==='date'&&React.createElement('input',{type:'date',value:r.endDate||'',onChange:e=>upd({endDate:e.target.value}),style:{...ss,marginLeft:'4px'}})),et==='count'&&React.createElement(React.Fragment,null,React.createElement('span',{style:{fontSize:'13px'}},'Después de'),r.endType==='count'&&numI(r.endCount||10,v=>upd({endCount:v}),1,999),React.createElement('span',{style:{fontSize:'13px',marginLeft:'4px'}},'repeticiones'))))),
+    React.createElement('div',{style:{display:'flex',justifyContent:'flex-end',gap:'8px'}},
+      React.createElement(Btn,{onClick:onClose},'Cancelar'),
+      React.createElement(Btn,{variant:'primary',onClick:()=>{onChange(r);onClose();}},'Listo')
+    )
+  );
+}
+
+/* ══ THREAD PANEL (slide-in, Slack style) ══ */
+function ThreadPanel({task,myName,comments,onAddComment,onClose}){
+  const [text,setText]=useState('');
+  const endRef=useRef(null);
+  useEffect(()=>endRef.current?.scrollIntoView({behavior:'smooth'}),[comments]);
+  const renderText=t=>{if(!t)return'';return t.split(/(@\w[\w.-]*)/g).map((p,i)=>p.startsWith('@')?React.createElement('span',{key:i,style:{color:'var(--blue)',fontWeight:'bold'}},p):p);};
+  const send=()=>{if(text.trim()){onAddComment(text);setText('');}};
+  return React.createElement('div',{className:'panel-inner',style:{width:'320px'}},
+    React.createElement('div',{style:{padding:'12px 14px',borderBottom:'1px solid var(--border)',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0,background:'#fff'}},
+      React.createElement('div',null,
+        React.createElement('div',{style:{fontWeight:'700',fontSize:'13px',color:'var(--blue)'}},'Hilo'),
+        React.createElement('div',{style:{fontSize:'12px',color:'var(--text-primary)',maxWidth:'220px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},task.title),
+        React.createElement('div',{style:{fontSize:'10px',color:'var(--gray)',marginTop:'1px'}},`${comments.length} comentario${comments.length!==1?'s':''}`)
+      ),
+      React.createElement('button',{onClick:onClose,className:'icon-btn',style:{width:28,height:28,fontSize:18}},'✕')
+    ),
+    React.createElement('div',{style:{padding:'8px 13px',borderBottom:'1px solid var(--border)',background:'#fafafa',flexShrink:0}},
+      React.createElement('div',{style:{display:'flex',gap:'6px',flexWrap:'wrap',alignItems:'center',marginBottom:'3px'}},
+        React.createElement('span',{style:{background:PRIORITY[task.priority]?.bg,color:PRIORITY[task.priority]?.color,fontWeight:'bold',fontSize:'10px',padding:'2px 6px',borderRadius:'var(--radius-pill)'}},PRIORITY[task.priority]?.label),
+        React.createElement('span',{style:{fontSize:'11px',color:'var(--gray)'}},`${task.addedBy===myName?'Yo':task.addedBy} ➔ ${task.assignedTo===myName?'Yo':task.assignedTo}`)
+      ),
+      !task.noExpiry&&task.dueTimestamp&&React.createElement('div',{style:{fontSize:'11px',color:'var(--gray)'}},`⏰ ${smartDate(task.dueTimestamp,false)}`)
+    ),
+    React.createElement('div',{style:{flex:1,overflowY:'auto',padding:'12px 12px 4px',background:'#f0f2f5',display:'flex',flexDirection:'column',gap:'8px'}},
+      comments.length===0&&React.createElement('div',{style:{textAlign:'center',color:'var(--gray)',fontSize:'12px',margin:'auto',fontStyle:'italic'}},'Sin comentarios.\nUsá @nombre para mencionar.'),
+      comments.map((c,i)=>{const isMe=c.author===myName;return React.createElement('div',{key:i,style:{display:'flex',flexDirection:'column',alignItems:isMe?'flex-end':'flex-start'}},React.createElement('div',{className:isMe?'bubble-me':'bubble-other',style:{padding:'8px 11px',maxWidth:'88%',boxShadow:'0 1px 2px rgba(0,0,0,0.06)'}},React.createElement('div',{style:{fontSize:'10px',color:isMe?'#5a8a5a':'var(--blue)',fontWeight:'700',marginBottom:'3px'}},isMe?'Yo':c.author),React.createElement('div',{style:{fontSize:'13px',lineHeight:1.45}},renderText(c.text)),React.createElement('div',{style:{fontSize:'10px',color:'var(--gray)',marginTop:'3px',textAlign:'right'}},fmtTs(c.ts))));}),
+      React.createElement('div',{ref:endRef})
+    ),
+    React.createElement('div',{style:{padding:'10px 12px',background:'#fff',borderTop:'1px solid var(--border)',display:'flex',gap:'8px',alignItems:'center',flexShrink:0}},
+      React.createElement('input',{value:text,onChange:e=>setText(e.target.value),onKeyDown:e=>e.key==='Enter'&&send(),placeholder:'Responder... (@nombre)',style:{flex:1,padding:'8px 13px',borderRadius:'var(--radius-pill)',border:'1px solid var(--border)',outline:'none',fontSize:'13px',background:'#f8f9fa',fontFamily:'var(--font)'}}),
+      React.createElement('button',{onClick:send,style:{width:34,height:34,borderRadius:'50%',background:'var(--blue)',color:'#fff',border:'none',cursor:'pointer',fontSize:'16px',display:'flex',alignItems:'center',justifyContent:'center'}},'➤')
+    )
+  );
+}
+
+/* ══ APP ══ */
+function App(){
+  const [uid,setUid]=useState(localStorage.getItem('tf7_uid')||null);
+  const [me,setMe]=useState(null);
+  const [authMode,setAuthMode]=useState('login');
+  const [authForm,setAuthForm]=useState({id:'',pass:'',slackName:'',inviteCode:''});
+  const [authErr,setAuthErr]=useState('');
+  const [authLoading,setAuthLoading]=useState(false);
+
+  const [tasks,setTasks]=useState([]);
+  const [allUsers,setAllUsers]=useState([]);
+  const [userMap,setUserMap]=useState({});
+  const [appCfg,setAppCfg]=useState(null);
+  const [invites,setInvites]=useState({});
+  const [globalTags,setGlobalTags]=useState([]); // [{id,label,color}]
+
+  const [selUser,setSelUser]=useState('');
+  const [showTeam,setShowTeam]=useState(false);
+  const [sidebar,setSidebar]=useState(true);
+  const [searchQ,setSearchQ]=useState('');
+
+  const [sortBy,setSortBy]=useState('date');
+  const [sortDir,setSortDir]=useState('desc');
+  const [filterStatus,setFilterStatus]=useState(false);
+  const [statusFlt,setStatusFlt]=useState({});
+  const [priFilter,setPriFilter]=useState('all');
+  const [tagFilter,setTagFilter]=useState(null); // tag id
+  const [showFltMenu,setShowFltMenu]=useState(false);
+
+  const [secs,setSecs]=useState({cur:true,asgn:true,exp:false,done:false});
+  const toggleSec=k=>setSecs(p=>({...p,[k]:!p[k]}));
+
+  const [detailId,setDetailId]=useState(null);
+  const [detailTab,setDetailTab]=useState('info');
+  const [threadId,setThreadId]=useState(null);
+  const [threadComments,setThreadComments]=useState([]);
+  const commUnsubRef=useRef(null);
+
+  const [showModal,setShowModal]=useState(false);
+  const [showSettings,setShowSettings]=useState(false);
+  const [showAdmin,setShowAdmin]=useState(false);
+  const [reassignTask,setReassignTask]=useState(null);
+  const [reassignTarget,setReassignTarget]=useState('');
+
+  const [selectedList,setSelectedList]=useState(null);
+
+  const blank=useCallback(()=>({
+    title:'',description:'',priority:'medium',assignedTo:me?.displayName||'',
+    id:null,noExpiry:false,dueDate:todayStr(),dueHour:new Date().getHours().toString(),dueMinute:'00',
+    recurrence:null,reminderOffset:0,subtasks:[],statusLog:[],
+    tags:[],
+    links:[],
+    listId:selectedList||null,
+    dependsOn:[],
+    startDate:'',
+    estimatedHours:'',
+  }),[me,selectedList]);
+  const [form,setForm]=useState(blank);
+  const [newSubIn,setNewSubIn]=useState('');
+  const [newLinkLabel,setNewLinkLabel]=useState('');
+  const [newLinkUrl,setNewLinkUrl]=useState('');
+  const [showRecPop,setShowRecPop]=useState(false);
+  const [showRemPop,setShowRemPop]=useState(false);
+  const modalBodyRef=useRef(null);
+
+  const [adm,setAdm]=useState({morningOn:true,morningT:'09:00',afternoonOn:true,afternoonT:'18:00'});
+  const [editMemberId,setEditMemberId]=useState('');
+  const [newTagLabel,setNewTagLabel]=useState('');
+  const [newTagColor,setNewTagColor]=useState(TAG_PALETTE[0]);
+
+  const [lists,setLists]=useState([]);
+
+  const [toast,setToast]=useState({show:false,msg:'',type:'ok'});
+  const [now,setNow]=useState(Date.now());
+  const [viewMode,setViewMode]=useState('list');
+  const [dragOverCol,setDragOverCol]=useState(null);
+  const [newListName,setNewListName]=useState('');
+  const [newListColor,setNewListColor]=useState('#1a73e8');
+  const [sbSecs,setSbSecs]=useState({prio:true,lists:true,team:true});
+  const [showListPop,setShowListPop]=useState(false);
+  const [listDragIdx,setListDragIdx]=useState(null);
+  const [confirmDeleteTask,setConfirmDeleteTask]=useState(null);
+  const [listDragOver,setListDragOver]=useState(null);
+  const [listPopName,setListPopName]=useState('');
+  const [listPopColor,setListPopColor]=useState('#1a73e8');
+  const [listPopVis,setListPopVis]=useState('private');
+  const [listPopAllowed,setListPopAllowed]=useState([]);
+  const [modalOpen,setModalOpen]=useState({links:false,subtasks:false,deps:false,startDate:false});
+  const [newGlobalListName,setNewGlobalListName]=useState('');
+  const [newGlobalListColor,setNewGlobalListColor]=useState('#1a73e8');
+
+  /* Firebase subs */
+  useEffect(()=>{
+    if(!uid)return;
+    onValue(ref(db,`${DB_USERS}/${uid}`),s=>{if(s.exists())setMe(s.val());});
+    onValue(ref(db,DB_USERS),s=>{if(s.val()){setUserMap(s.val());setAllUsers(Object.values(s.val()).map(u=>u.displayName).filter(Boolean));}});
+    onValue(ref(db,DB_TASKS),s=>setTasks(s.val()?Object.values(s.val()):[]));
+    onValue(ref(db,DB_CONFIG),s=>{if(s.exists())setAppCfg(s.val());});
+    onValue(ref(db,DB_INVITES),s=>setInvites(s.val()||{}));
+    onValue(ref(db,'v3_tags'),s=>setGlobalTags(s.val()?Object.values(s.val()):[]));
+    onValue(ref(db,DB_LISTS),s=>setLists(s.val()?Object.values(s.val()):[]));
+  },[uid]);
+  useEffect(()=>{if(me?.displayName&&!selUser)setSelUser(me.displayName);},[me]);
+  useEffect(()=>{if(!appCfg)return;setAdm(f=>({...f,morningOn:appCfg.reportSchedule?.morningEnabled??true,morningT:appCfg.reportSchedule?.morningTime||'09:00',afternoonOn:appCfg.reportSchedule?.afternoonEnabled??true,afternoonT:appCfg.reportSchedule?.afternoonTime||'18:00'}));},[appCfg]);
+
+  /* Thread subscription */
+  useEffect(()=>{
+    commUnsubRef.current?.();commUnsubRef.current=null;
+    if(!threadId){setThreadComments([]);return;}
+    const unsub=onValue(ref(db,`${DB_COMMENTS}/${threadId}`),s=>{setThreadComments(s.val()?Object.values(s.val()).sort((a,b)=>a.ts-b.ts):[]);});
+    commUnsubRef.current=unsub;
+    return()=>{commUnsubRef.current?.();};
+  },[threadId]);
+
+  /* Ticker — refs prevent stale closures */
+  const tickerRef=useRef({appCfg,tasks,allUsers});
+  useEffect(()=>{tickerRef.current={appCfg,tasks,allUsers};},[appCfg,tasks,allUsers]);
+  useEffect(()=>{
+    const id=setInterval(()=>{
+      setNow(Date.now());
+      const{appCfg:cfg,tasks:t,allUsers:u}=tickerRef.current;
+      checkReports(cfg,t,u,db);
+    },30000);
+    return()=>clearInterval(id);
+  },[]);
+
+  /* Modal auto-scroll */
+  useEffect(()=>{if((showRecPop||showRemPop)&&modalBodyRef.current)setTimeout(()=>modalBodyRef.current.scrollTo({top:modalBodyRef.current.scrollHeight,behavior:'smooth'}),60);},[showRecPop,showRemPop]);
+
+  /* Close filter menu on outside click */
+  useEffect(()=>{const h=e=>{if(showFltMenu&&!e.target.closest('.flt-menu'))setShowFltMenu(false);};document.addEventListener('mousedown',h);return()=>document.removeEventListener('mousedown',h);},[showFltMenu]);
+
+  /* Escape key — close topmost modal */
+  useEffect(()=>{
+    const h=e=>{
+      if(e.key!=='Escape')return;
+      if(showModal){setShowModal(false);setModalOpen({links:false,subtasks:false,deps:false,startDate:false});return;}
+      if(showAdmin){setShowAdmin(false);return;}
+      if(showListPop){setShowListPop(false);return;}
+      if(reassignTask){setReassignTask(null);return;}
+      if(threadId){closeThread();return;}
+      if(detailId){setDetailId(null);return;}
+    };
+    document.addEventListener('keydown',h);
+    return()=>document.removeEventListener('keydown',h);
+  },[showModal,showAdmin,showListPop,reassignTask,threadId,detailId]);
+
+  const showToast=(msg,type='ok')=>{setToast({show:true,msg,type});setTimeout(()=>setToast({show:false,msg:'',type:'ok'}),3000);};
+  const isAdmin=me?.isAdmin===true;
+  // Slack usa constantes globales SLACK_TOKEN / SLACK_TODOLIST_CH + DMs por Member ID
+  const isViewingOther=selUser&&selUser!==me?.displayName;
+
+  /* ── Auth ── */
+  const handleAuth=async()=>{
+    if(authLoading)return;
+    setAuthErr('');setAuthLoading(true);
+    try {
+    if(!authForm.id.trim()||!authForm.pass.trim())return setAuthErr('Completá usuario y contraseña.');
+    if(authMode==='register'&&!authForm.slackName.trim())return setAuthErr('Ingresá tu nombre de Slack.');
+    const uRef=ref(db,`${DB_USERS}/${authForm.id.trim()}`);const snap=await get(uRef);
+    if(authMode==='register'){
+      const cfgSnap=await get(ref(db,`${DB_CONFIG}/adminUid`));const adminExists=cfgSnap.exists();
+      if(adminExists){if(!authForm.inviteCode.trim())return setAuthErr('Se requiere código de invitación.');const invSnap=await get(ref(db,`${DB_INVITES}/${authForm.inviteCode.toUpperCase()}`));if(!invSnap.exists())return setAuthErr('Código inválido.');if(invSnap.val().usedBy)return setAuthErr('Código ya utilizado.');await update(ref(db,`${DB_INVITES}/${authForm.inviteCode.toUpperCase()}`),{usedBy:authForm.id.trim(),usedAt:Date.now()});}
+      if(snap.exists())return setAuthErr('Ese UserID ya existe.');const isFirst=!adminExists;
+      await set(uRef,{displayName:authForm.slackName.trim(),pass:authForm.pass,isAdmin:isFirst,createdAt:Date.now()});
+      if(isFirst)await set(ref(db,`${DB_CONFIG}/adminUid`),authForm.id.trim());
+      showToast(isFirst?'¡Bienvenido, Administrador!':'Cuenta creada. Iniciá sesión.');setAuthMode('login');setAuthForm(f=>({...f,pass:'',inviteCode:''}));
+    } else {
+      if(!snap.exists()||snap.val().pass!==authForm.pass)return setAuthErr('Credenciales incorrectas.');
+      localStorage.setItem('tf7_uid',authForm.id.trim());setUid(authForm.id.trim());setSelUser(snap.val().displayName);
+    }
+    }catch(e){setAuthErr('Error de conexión. Intentá de nuevo.');} finally{setAuthLoading(false);}
+  };
+
+  /* ── Task processing ── */
+  const processTasks=useCallback((list,type)=>{
+    const n=Date.now();
+    let base=[];
+    if(type==='completed')base=list.filter(t=>t.status==='completed'&&(t.assignedTo===selUser||t.addedBy===selUser));
+    else if(type==='assigned')base=list.filter(t=>t.addedBy===me?.displayName&&t.assignedTo!==me?.displayName&&t.status!=='completed');
+    else if(type==='expired')base=list.filter(t=>!t.noExpiry&&t.assignedTo===selUser&&t.dueTimestamp<n&&t.status!=='completed');
+    else base=list.filter(t=>t.assignedTo===selUser&&t.status!=='completed'&&(t.noExpiry||t.dueTimestamp>=n));
+    if(selectedList)base=base.filter(t=>t.listId===selectedList);
+    let f=base.filter(t=>priFilter==='all'||t.priority===priFilter);
+    if(filterStatus){const act=Object.keys(statusFlt).filter(k=>statusFlt[k]);if(act.length)f=f.filter(t=>act.includes(t.status));}
+    if(tagFilter)f=f.filter(t=>(t.tags||[]).includes(tagFilter));
+    if(searchQ.trim()){const q=searchQ.toLowerCase();f=f.filter(t=>t.title?.toLowerCase().includes(q)||t.description?.toLowerCase().includes(q));}
+    return f.sort((a,b)=>{const d=sortDir==='desc'?-1:1;if(type==='expired')return(b.dueTimestamp||0)-(a.dueTimestamp||0);if(sortBy==='priority'){const c=(PRIORITY[a.priority]?.weight||0)-(PRIORITY[b.priority]?.weight||0);if(c!==0)return c*d;}if(sortBy==='vencimiento'){if(a.noExpiry&&!b.noExpiry)return 1;if(!a.noExpiry&&b.noExpiry)return -1;const c=(a.dueTimestamp||0)-(b.dueTimestamp||0);if(c!==0)return c*d;}return((a.createdAt||0)-(b.createdAt||0))*d;});
+  },[tasks,selUser,me,priFilter,filterStatus,statusFlt,sortBy,sortDir,now,tagFilter,searchQ,selectedList]);
+  const curTasks  =useMemo(()=>processTasks(tasks,'current'),  [processTasks]);
+  const asgnTasks =useMemo(()=>processTasks(tasks,'assigned'), [processTasks]);
+  const expTasks  =useMemo(()=>processTasks(tasks,'expired'),  [processTasks]);
+  const doneTasks =useMemo(()=>processTasks(tasks,'completed'),[processTasks]);
+  const detailTask=useMemo(()=>tasks.find(t=>t.id===detailId),[tasks,detailId]);
+  const threadTask=useMemo(()=>tasks.find(t=>t.id===threadId),[tasks,threadId]);
+
+  const openThread=(taskId,e)=>{e?.stopPropagation();setThreadId(threadId===taskId?null:taskId);};
+  const closeThread=()=>setThreadId(null);
+
+  /* ── Handlers ── */
+  const handleComplete=async(t,checked)=>{
+    if(checked&&t.recurrence&&t.recurrence.type!=='none'){const nextTs=calcNextTs(t.recurrence,t.dueTimestamp||Date.now());if(nextTs){const nRef=push(ref(db,DB_TASKS));await set(nRef,{...t,id:nRef.key,status:'wip',createdAt:Date.now(),dueTimestamp:nextTs,subtasks:(t.subtasks||[]).map(s=>({...s,done:false})),statusLog:[]});showToast(`↻ Próxima: ${new Date(nextTs).toLocaleDateString('es-AR')}`);}}
+    const newS=checked?'completed':'wip';const log=[...(t.statusLog||[]),{from:t.status,to:newS,changedBy:me?.displayName,timestamp:Date.now()}];
+    await update(ref(db,`${DB_TASKS}/${t.id}`),{status:newS,statusLog:log});
+    _notifyCreator(SLACK_TOKEN,userMap,t,me?.displayName,'status',newS);
+    showToast('Estado actualizado');
+  };
+  const handleStatusChange=async(t,val)=>{const log=[...(t.statusLog||[]),{from:t.status,to:val,changedBy:me?.displayName,timestamp:Date.now()}];await update(ref(db,`${DB_TASKS}/${t.id}`),{status:val,statusLog:log});_notifyCreator(SLACK_TOKEN,userMap,t,me?.displayName,'status',val);showToast('Estado actualizado');};
+  const handleAddComment=async(text)=>{if(!text.trim()||!threadId)return;const c={text,author:me?.displayName,ts:Date.now()};await set(push(ref(db,`${DB_COMMENTS}/${threadId}`)),c);const t=tasks.find(x=>x.id===threadId);if(t)await update(ref(db,`${DB_TASKS}/${threadId}`),{commentCount:(t.commentCount||0)+1});if(threadTask){_notifyCreator(SLACK_TOKEN,userMap,threadTask,me?.displayName,'comment',text);}};
+  const handleToggleSub=async(taskId,stId)=>{const t=tasks.find(x=>x.id===taskId);if(!t)return;await update(ref(db,`${DB_TASKS}/${taskId}`),{subtasks:(t.subtasks||[]).map(s=>s.id===stId?{...s,done:!s.done}:s)});};
+  const handleAddSub=async(taskId)=>{if(!newSubIn.trim())return;const t=tasks.find(x=>x.id===taskId);if(!t)return;await update(ref(db,`${DB_TASKS}/${taskId}`),{subtasks:[...(t.subtasks||[]),{id:Date.now().toString(),text:newSubIn,done:false}]});setNewSubIn('');showToast('Subtarea agregada');};
+  const handleSaveTask=async()=>{
+    if(!form.title.trim())return showToast('El título es obligatorio','err');
+    let dueTs=null;
+    if(!form.noExpiry){const dt=new Date(`${form.dueDate}T${form.dueHour.toString().padStart(2,'0')}:${(form.dueMinute||'00').toString().padStart(2,'0')}:00`);dueTs=dt.getTime();const isRec=form.recurrence&&form.recurrence.type!=='none';if(!isRec&&dueTs<=Date.now())return showToast('Fecha en el pasado','err');}
+    const isEdit=!!form.id;const tRef=form.id?ref(db,`${DB_TASKS}/${form.id}`):push(ref(db,DB_TASKS));
+    const ft={...form,id:form.id||tRef.key,addedBy:isEdit?form.addedBy:me?.displayName,status:form.status||'wip',createdAt:form.createdAt||Date.now(),dueTimestamp:dueTs,subtasks:form.subtasks||[],statusLog:form.statusLog||[],tags:form.tags||[],links:form.links||[]};
+    await set(tRef,ft);
+    if(!isEdit&&ft.assignedTo!==me?.displayName){const ae=Object.values(userMap).find(u=>u.displayName===ft.assignedTo);if(ae?.slackMemberId)notifyAssigneeDM(SLACK_TOKEN,ae.slackMemberId,ft,me?.displayName);}
+    setShowModal(false);setNewSubIn('');setNewLinkLabel('');setNewLinkUrl('');setModalOpen({links:false,subtasks:false,deps:false,startDate:false});
+    showToast(isEdit?'✅ Tarea actualizada':'✅ Tarea creada');
+  };
+  const handleDeleteTask=async(t,e)=>{e?.stopPropagation();setConfirmDeleteTask(t);};
+  const doDeleteTask=async()=>{if(!confirmDeleteTask)return;await remove(ref(db,`${DB_TASKS}/${confirmDeleteTask.id}`));if(detailId===confirmDeleteTask.id)setDetailId(null);if(threadId===confirmDeleteTask.id)setThreadId(null);setConfirmDeleteTask(null);showToast('Tarea eliminada');};
+
+  /* Reassignment */
+  const canReassign=(t)=>{const myName=me?.displayName;if(t.status==='completed')return false;if(t.assignedTo===myName)return'own';if(!t.noExpiry){const diff=t.dueTimestamp-Date.now();if(diff>0&&diff<=1800000)return'take';}return false;};
+  const handleReassign=async()=>{
+  if(!reassignTask||!reassignTarget)return;
+  const old=reassignTask.assignedTo;
+  const log=[...(reassignTask.statusLog||[]),{type:'reassign',from:old,to:reassignTarget,changedBy:me?.displayName,timestamp:Date.now()}];
+  await update(ref(db,`${DB_TASKS}/${reassignTask.id}`),{assignedTo:reassignTarget,statusLog:log});
+  _notifyCreator(SLACK_TOKEN,userMap,reassignTask,me?.displayName,'reassign',{from:old,to:reassignTarget});
+  setReassignTask(null);setReassignTarget('');showToast(`✅ Reasignada a ${reassignTarget}`);
+};
+
+  /* Tag management */
+  const handleCreateList=async()=>{if(!newListName.trim())return;const myLists=lists.filter(l=>l.createdBy===me?.displayName);const lRef=push(ref(db,DB_LISTS));await set(lRef,{id:lRef.key,name:newListName.trim(),color:newListColor,createdBy:me?.displayName,createdAt:Date.now(),visibility:'private',allowedUsers:[],order:myLists.length});setNewListName('');showToast('Lista creada');};
+  const handleCreateListPop=async()=>{if(!listPopName.trim())return;const myLists=lists.filter(l=>l.createdBy===me?.displayName);const lRef=push(ref(db,DB_LISTS));await set(lRef,{id:lRef.key,name:listPopName.trim(),color:listPopColor,visibility:listPopVis,allowedUsers:listPopAllowed,createdBy:me?.displayName,createdAt:Date.now(),order:myLists.length});setListPopName('');setListPopVis('private');setListPopAllowed([]);setShowListPop(false);showToast('Lista creada');};
+  const handleDeleteList=async(id)=>{await remove(ref(db,`${DB_LISTS}/${id}`));if(selectedList===id)setSelectedList(null);showToast('Lista eliminada');};
+  const handleReorderList=async(fromIdx,toIdx)=>{
+    const myLists=[...lists.filter(l=>l.createdBy===me?.displayName)].sort((a,b)=>(a.order??99)-(b.order??99));
+    const moved=myLists.splice(fromIdx,1)[0];
+    myLists.splice(toIdx,0,moved);
+    const updates={};
+    myLists.forEach((l,i)=>{updates[`${DB_LISTS}/${l.id}/order`]=i;});
+    await update(ref(db),updates);
+  };
+  const handleCreateGlobalList=async()=>{
+    if(!newGlobalListName.trim())return;
+    const lRef=push(ref(db,DB_LISTS));
+    await set(lRef,{
+      id:lRef.key,
+      name:newGlobalListName.trim(),
+      color:newGlobalListColor,
+      createdBy:'⭐',
+      isGlobal:true,
+      createdAt:Date.now(),
+      order:0,
+      visibility:'public',
+      allowedUsers:[],
+    });
+    setNewGlobalListName('');
+    showToast('Lista global creada');
+  };
+  const handleDeleteGlobalList=async(id)=>{
+    
+    await remove(ref(db,`${DB_LISTS}/${id}`));
+    showToast('Lista global eliminada');
+  };
+  const handleCreateTag=async()=>{if(!newTagLabel.trim())return;const tRef=push(ref(db,'v3_tags'));await set(tRef,{id:tRef.key,label:newTagLabel.trim(),color:newTagColor});setNewTagLabel('');showToast('Etiqueta creada');};
+  const handleDeleteTag=async(id)=>{await remove(ref(db,`v3_tags/${id}`));if(tagFilter===id)setTagFilter(null);};
+
+  /* Kick user */
+  const handleKickUser=async(id,u)=>{
+    if(!confirm(`¿Expulsar a ${u.displayName}? Esta acción elimina su cuenta. Sus tareas permanecerán asignadas a ellos pero no podrán acceder.`))return;
+    await remove(ref(db,`${DB_USERS}/${id}`));
+    // Reasignar sus tareas abiertas a sin-asignar no es necesario — quedan registradas
+    showToast(`${u.displayName} fue expulsado`);
+  };
+
+  /* ══ TASK ROW ══ */
+  const renderRow=(t)=>{
+    const p=PRIORITY[t.priority]||PRIORITY.medium;
+    const s=STATUS[t.status]||STATUS.wip;
+    const done=t.status==='completed';
+    const myName=me?.displayName;
+    const isOwner=t.addedBy===myName,isAssigned=t.assignedTo===myName;
+    const diff=t.noExpiry?Infinity:(t.dueTimestamp-Date.now());
+    const expired=!t.noExpiry&&diff<0&&!done;
+    const urgentHour=!t.noExpiry&&diff>0&&diff<=3600000&&!done;
+    const urgent30=!t.noExpiry&&diff>0&&diff<=1800000&&!done;
+    const stDone=(t.subtasks||[]).filter(x=>x.done).length,stTot=(t.subtasks||[]).length;
+    const cCount=t.commentCount||0;
+    const hasThread=threadId===t.id;
+    const reassignMode=canReassign(t);
+    const taskTags=(t.tags||[]).map(id=>globalTags.find(tg=>tg.id===id)).filter(Boolean);
+
+    return React.createElement('div',{key:t.id,className:'task-row',style:{display:'flex',alignItems:'flex-start',padding:'10px 20px',borderBottom:'1px solid var(--border)',background:hasThread?'var(--blue-light)':expired?'var(--expiredBg)':urgentHour?'rgba(230,81,0,0.04)':'transparent',cursor:'pointer',gap:'10px'},onClick:()=>{setDetailId(detailId===t.id?null:t.id);setDetailTab('info');}},
+      React.createElement('div',{style:{paddingTop:'2px',flexShrink:0},onClick:e=>e.stopPropagation()},
+        (isOwner||isAssigned)&&React.createElement('input',{type:'checkbox',checked:done,onChange:e=>handleComplete(t,e.target.checked)})
+      ),
+      React.createElement('div',{style:{flex:1,minWidth:0}},
+        React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'5px',flexWrap:'wrap',marginBottom:'2px'}},
+          React.createElement('span',{className:'badge',style:{background:done?'var(--gray-mid)':p.bg,color:done?'var(--text-tertiary)':p.color}},p.label),
+          React.createElement('span',{style:{fontSize:'14px',fontWeight:'500',color:done?'var(--text-tertiary)':'var(--text-primary)',textDecoration:done?'line-through':'none'}},(t.dependsOn||[]).some(depId=>{const dep=tasks.find(x=>x.id===depId);return dep&&dep.status!=='completed';})?React.createElement(React.Fragment,null,React.createElement('span',{style:{fontSize:'11px',color:'var(--orange)',marginRight:'3px'}},'🔒'),t.title):t.title),
+          t.noExpiry&&React.createElement('span',{className:'badge',style:{background:'#e6f4ea',color:'var(--success)'}},'∞'),
+          recLabel(t.recurrence)&&React.createElement('span',{className:'badge',style:{background:'#f3e8ff',color:'var(--purple)'}},recLabel(t.recurrence)),
+          stTot>0&&React.createElement('span',{style:{fontSize:'10px',color:stDone===stTot?'var(--success)':'var(--gray)'}},`${stDone}/${stTot}`),
+          !isAssigned&&!isOwner&&urgent30&&!done&&React.createElement('span',{className:'badge',style:{background:'var(--error)',color:'#fff'}},'⚡ <30min'),
+          !isAssigned&&!isOwner&&urgentHour&&!urgent30&&!done&&React.createElement('span',{className:'badge',style:{background:'var(--orange)',color:'#fff'}},'⏳ <1h')
+        ),
+        taskTags.length>0&&React.createElement('div',{style:{display:'flex',gap:'4px',flexWrap:'wrap',marginBottom:'3px'}},
+          taskTags.map(tg=>React.createElement('span',{key:tg.id,className:'tag-chip',style:{background:tg.color+'22',color:tg.color,border:`1px solid ${tg.color}44`}},tg.label))
+        ),
+        t.description&&React.createElement('div',{style:{fontSize:'12px',color:'var(--gray)',marginBottom:'3px',lineHeight:1.4,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}},t.description),
+        (t.links||[]).length>0&&React.createElement('div',{style:{display:'flex',gap:'6px',flexWrap:'wrap',marginBottom:'3px'}},
+          (t.links||[]).map((lk,i)=>React.createElement('a',{key:i,href:lk.url,target:'_blank',rel:'noopener noreferrer',onClick:e=>e.stopPropagation(),style:{fontSize:'11px',color:'var(--blue)',textDecoration:'none',display:'flex',alignItems:'center',gap:'3px'}},`🔗 ${lk.label||lk.url}`))
+        ),
+        React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'8px',flexWrap:'wrap'}},
+          React.createElement('span',{style:{fontSize:'11px',color:'var(--gray)'}},`${t.addedBy===myName?'Yo':t.addedBy} ➔ ${t.assignedTo===myName?'Yo':t.assignedTo}`),
+          React.createElement('span',{style:{fontSize:'10px',color:'var(--text-tertiary)'}},createdLabel(t.createdAt)),
+          !t.noExpiry&&React.createElement('span',{style:{fontSize:'11px',color:(expired||urgentHour)?'var(--error)':done?'var(--text-tertiary)':'var(--gray)',fontWeight:(expired||urgentHour)?'bold':'normal',background:urgentHour?'rgba(217,48,37,0.09)':'transparent',padding:urgentHour?'1px 5px':'0',borderRadius:'var(--radius-sm)'}},smartDate(t.dueTimestamp,false))
+        )
+      ),
+      React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'5px',flexShrink:0,paddingTop:'2px'},onClick:e=>e.stopPropagation()},
+        isAssigned
+          ?React.createElement('select',{value:t.status,onChange:e=>handleStatusChange(t,e.target.value),style:{padding:'4px 7px',borderRadius:'var(--radius-md)',fontSize:'11px',border:`1px solid ${s.color}`,background:s.bg,color:s.color,fontWeight:'600',cursor:'pointer',fontFamily:'var(--font)'}},Object.keys(STATUS).map(k=>React.createElement('option',{key:k,value:k},STATUS[k].label)))
+          :React.createElement('span',{className:'badge',style:{background:s.bg,color:s.color}},s.label),
+        React.createElement('div',{className:'task-actions',style:{display:'flex',alignItems:'center',gap:'2px'}},
+          reassignMode&&React.createElement(Tooltip,{tip:reassignMode==='own'?'Reasignar':'Tomar tarea'},
+            React.createElement('button',{className:'icon-btn',onClick:e=>{e.stopPropagation();setReassignTask(t);setReassignTarget(reassignMode==='take'?myName:(allUsers.find(u=>u!==t.assignedTo)||''));},style:{width:28,height:28,fontSize:14,color:reassignMode==='take'?'var(--orange)':'var(--blue)'}},reassignMode==='take'?'🙋':'🔀')
+          ),
+          React.createElement(Tooltip,{tip:'Ver hilo'},
+            React.createElement('button',{className:`icon-btn${hasThread?' active':''}`,onClick:e=>openThread(t.id,e),style:{width:28,height:28,fontSize:14,position:'relative'}},
+              '💬',
+              cCount>0&&React.createElement('span',{style:{position:'absolute',top:'-2px',right:'-2px',background:'var(--blue)',color:'#fff',borderRadius:'50%',fontSize:'9px',width:'14px',height:'14px',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:'bold'}},cCount>9?'9+':cCount)
+            )
+          ),
+          isOwner&&React.createElement(Tooltip,{tip:'Editar'},
+            React.createElement('button',{className:'icon-btn',onClick:e=>{e.stopPropagation();const d=new Date(t.dueTimestamp||Date.now());setForm({...t,dueDate:d.toISOString().split('T')[0],dueHour:d.getHours().toString(),dueMinute:d.getMinutes().toString().padStart(2,'0'),subtasks:t.subtasks||[],tags:t.tags||[],links:t.links||[]});setShowRecPop(false);setShowRemPop(false);setShowModal(true);},style:{width:28,height:28,fontSize:14,color:'var(--blue)'}},'✏️')
+          ),
+          isOwner&&React.createElement(Tooltip,{tip:'Eliminar'},
+            React.createElement('button',{className:'icon-btn',onClick:e=>handleDeleteTask(t,e),style:{width:28,height:28,fontSize:14,color:'var(--error)',opacity:0.7}},'🗑️')
+          )
+        )
+      )
+    );
+  };
+
+  /* ══ DETAIL PANEL ══ */
+  const renderDetail=()=>{
+    if(!detailTask)return null;
+    const s=STATUS[detailTask.status]||STATUS.wip;
+    const myName=me?.displayName;
+    const isDetailOwner=detailTask.addedBy===myName;
+    const stDone=(detailTask.subtasks||[]).filter(x=>x.done).length,stTot=(detailTask.subtasks||[]).length;
+    const log=(detailTask.statusLog||[]).slice().reverse();
+    const taskTags=(detailTask.tags||[]).map(id=>globalTags.find(tg=>tg.id===id)).filter(Boolean);
+    return React.createElement('div',{className:'panel-wrapper',style:{width:'300px',borderLeft:'1px solid var(--border)'}},
+      React.createElement('div',{className:'panel-inner',style:{width:'300px',background:'#fff'}},
+        React.createElement('div',{style:{padding:'12px 13px 9px',borderBottom:'1px solid var(--border)',display:'flex',justifyContent:'space-between',alignItems:'flex-start',flexShrink:0}},
+          React.createElement('div',{style:{flex:1,marginRight:'8px'}},
+            React.createElement('div',{style:{fontSize:'13px',fontWeight:'600',lineHeight:1.4,marginBottom:'5px'}},detailTask.title),
+            React.createElement('div',{style:{display:'flex',gap:'5px',flexWrap:'wrap'}},
+              React.createElement('span',{className:'badge',style:{background:s.bg,color:s.color}},s.label),
+              detailTask.noExpiry&&React.createElement('span',{className:'badge',style:{background:'#e6f4ea',color:'var(--success)'}},'∞'),
+              recLabel(detailTask.recurrence)&&React.createElement('span',{className:'badge',style:{background:'#f3e8ff',color:'var(--purple)'}},recLabel(detailTask.recurrence))
+            )
+          ),
+          React.createElement(Tooltip,{tip:'Abrir hilo'},React.createElement('button',{className:'icon-btn',onClick:()=>openThread(detailTask.id),style:{width:28,height:28,fontSize:15,marginRight:'4px',color:'var(--blue)'}},'💬')),
+          React.createElement('button',{onClick:()=>setDetailId(null),className:'icon-btn',style:{width:26,height:26,fontSize:17}},'✕')
+        ),
+        React.createElement('div',{style:{display:'flex',borderBottom:'1px solid var(--border)',flexShrink:0}},
+          ['info','subtasks','activity'].map(tab=>React.createElement('button',{key:tab,onClick:()=>setDetailTab(tab),style:{flex:1,padding:'7px 4px',border:'none',background:'none',cursor:'pointer',fontSize:'11px',fontWeight:'600',color:detailTab===tab?'var(--blue)':'var(--gray)',borderBottom:`2px solid ${detailTab===tab?'var(--blue)':'transparent'}`,transition:'all 0.12s',fontFamily:'var(--font)'}},{info:'ℹ️ Info',subtasks:`☑️ Sub${stTot>0?` ${stDone}/${stTot}`:''}`,activity:'📋 Log'}[tab]))
+        ),
+        React.createElement('div',{style:{flex:1,overflowY:'auto',padding:'11px 13px'}},
+          detailTab==='info'&&React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:'8px'}},
+            [['Asignada a',detailTask.assignedTo===myName?'Yo':detailTask.assignedTo],['Creada por',detailTask.addedBy===myName?'Yo':detailTask.addedBy],['Vencimiento',smartDate(detailTask.dueTimestamp,detailTask.noExpiry)],['Creada',fmtTs(detailTask.createdAt)],...(detailTask.listId?[['Lista',(lists.find(l=>l.id===detailTask.listId)?.name)||'—']]:[] ),...(detailTask.startDate?[['Inicio',detailTask.startDate]]:[] ),...(detailTask.estimatedHours?[['Hs estimadas',detailTask.estimatedHours+'hs']]:[] )].map(([l,v])=>React.createElement('div',{key:l,style:{display:'flex',justifyContent:'space-between',fontSize:'12px',padding:'4px 0',borderBottom:'1px solid var(--border)'}},React.createElement('span',{style:{color:'var(--gray)'}},l),React.createElement('span',{style:{fontWeight:'500'}},v))),
+            taskTags.length>0&&React.createElement('div',null,React.createElement('div',{style:{fontSize:'10px',fontWeight:'700',color:'var(--gray)',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'5px'}},'ETIQUETAS'),React.createElement('div',{style:{display:'flex',gap:'4px',flexWrap:'wrap'}},taskTags.map(tg=>React.createElement('span',{key:tg.id,className:'tag-chip',style:{background:tg.color+'22',color:tg.color,border:`1px solid ${tg.color}44`}},tg.label)))),
+            (detailTask.links||[]).length>0&&React.createElement('div',null,React.createElement('div',{style:{fontSize:'10px',fontWeight:'700',color:'var(--gray)',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'5px'}},'LINKS'),(detailTask.links||[]).map((lk,i)=>React.createElement('a',{key:i,href:lk.url,target:'_blank',rel:'noopener noreferrer',style:{display:'flex',alignItems:'center',gap:'5px',fontSize:'12px',color:'var(--blue)',textDecoration:'none',padding:'3px 0',borderBottom:'1px solid var(--border)'}},`🔗 ${lk.label||lk.url}`))),
+            detailTask.description&&React.createElement('div',null,React.createElement('div',{style:{fontSize:'10px',fontWeight:'700',color:'var(--gray)',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'5px'}},'DESCRIPCIÓN'),React.createElement('div',{style:{fontSize:'13px',lineHeight:1.6,background:'var(--gray-light)',padding:'9px 10px',borderRadius:'var(--radius-md)'}},detailTask.description))
+          ),
+          detailTab==='subtasks'&&React.createElement('div',null,
+            stTot>0&&React.createElement('div',{style:{height:'4px',background:'var(--gray-mid)',borderRadius:'2px',marginBottom:'10px',overflow:'hidden'}},React.createElement('div',{style:{height:'100%',width:`${stTot?(stDone/stTot)*100:0}%`,background:'var(--success)',borderRadius:'2px',transition:'width 0.3s'}})),
+            (detailTask.subtasks||[]).length===0&&React.createElement('div',{style:{color:'var(--gray)',fontSize:'13px',fontStyle:'italic',padding:'8px 0'}},'Sin subtareas.'),
+            (detailTask.subtasks||[]).map(st=>React.createElement('div',{key:st.id,style:{display:'flex',alignItems:'center',gap:'8px',padding:'6px 0',borderBottom:'1px solid var(--border)'}},React.createElement('input',{type:'checkbox',checked:st.done,onChange:()=>handleToggleSub(detailTask.id,st.id)}),React.createElement('span',{style:{fontSize:'13px',color:st.done?'var(--text-tertiary)':'var(--text-primary)',textDecoration:st.done?'line-through':'none',flex:1}},st.text))),
+            isDetailOwner&&React.createElement('div',{style:{display:'flex',gap:'6px',marginTop:'10px'}},React.createElement('input',{placeholder:'Nueva subtarea...',value:newSubIn,onChange:e=>setNewSubIn(e.target.value),onKeyDown:e=>e.key==='Enter'&&handleAddSub(detailTask.id),style:{flex:1,padding:'6px 9px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',fontSize:'12px',outline:'none',fontFamily:'var(--font)'}}),React.createElement(Btn,{variant:'primary',onClick:()=>handleAddSub(detailTask.id),style:{padding:'6px 10px',fontSize:'13px'}},'+')),
+            !isDetailOwner&&React.createElement('div',{style:{fontSize:'11px',color:'var(--gray)',fontStyle:'italic',marginTop:'8px',textAlign:'center'}},'Solo el creador puede agregar subtareas.')
+          ),
+          detailTab==='activity'&&React.createElement('div',null,
+            log.length===0&&React.createElement('div',{style:{color:'var(--gray)',fontSize:'13px',fontStyle:'italic'}},'Sin actividad.'),
+            log.map((e,i)=>{const isR=e.type==='reassign';return React.createElement('div',{key:i,style:{display:'flex',gap:'8px',marginBottom:'10px',alignItems:'flex-start'}},React.createElement('div',{style:{width:'7px',height:'7px',borderRadius:'50%',background:isR?'var(--orange)':STATUS[e.to]?.color||'var(--gray)',marginTop:'4px',flexShrink:0}}),React.createElement('div',null,React.createElement('div',{style:{fontSize:'12px',lineHeight:1.5}},React.createElement('b',null,e.changedBy===myName?'Yo':e.changedBy),isR?' reasignó: ':' → ',isR?React.createElement('span',null,`@${e.from} → @${e.to}`):React.createElement('b',{style:{color:STATUS[e.to]?.color||'var(--gray)'}},STATUS[e.to]?.label||e.to)),React.createElement('div',{style:{fontSize:'10px',color:'var(--gray)'}},fmtTs(e.timestamp))));})
+          )
+        )
+      )
+    );
+  };
+
+  /* ══ TASK MODAL ══ */
+  const renderModal=()=>{
+    if(!showModal)return null;
+    const today=todayStr(),now2=new Date();
+    const isRec=form.recurrence&&form.recurrence.type!=='none';
+    const free=form.noExpiry||isRec;
+    const isTodayDate=!free&&form.dueDate===today;
+    const validH=Array.from({length:24},(_,i)=>i).filter(h=>!isTodayDate||h>=now2.getHours());
+    const selH=parseInt(form.dueHour),isCurH=isTodayDate&&selH===now2.getHours();
+    const validM=Array.from({length:12},(_,i)=>i*5).filter(m=>!isCurH||m>now2.getMinutes());
+    const assigningOther=form.assignedTo!==me?.displayName;
+    const ss={padding:'7px 9px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',fontSize:'13px',cursor:'pointer',outline:'none',fontFamily:'var(--font)'};
+
+    return React.createElement('div',{onClick:e=>e.target===e.currentTarget&&setShowModal(false),style:{position:'fixed',inset:0,background:'rgba(15,23,42,0.55)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000}},
+      React.createElement('div',{className:'fade-up',style:{width:'480px',maxWidth:'95vw',background:'#fff',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-lg)',display:'flex',flexDirection:'column',maxHeight:'90vh',overflow:'hidden'}},
+        React.createElement('div',{style:{padding:'18px 22px 14px',borderBottom:'1px solid var(--border)',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}},
+          React.createElement('h3',{style:{margin:0,fontSize:'14px',fontWeight:'600',letterSpacing:'-0.02em'}},form.id?'Editar tarea':'Nueva tarea'),
+          React.createElement('button',{onClick:()=>{setShowModal(false);setModalOpen({links:false,subtasks:false,deps:false,startDate:false});},className:'icon-btn',style:{width:30,height:30,fontSize:18}},'✕')
+        ),
+        React.createElement('div',{ref:modalBodyRef,style:{flex:1,overflowY:'auto',padding:'18px 22px',display:'flex',flexDirection:'column',gap:'14px'}},
+          React.createElement('input',{style:{width:'100%',padding:'10px 0',border:'none',borderBottom:'2px solid var(--blue)',outline:'none',fontSize:'15px',background:'var(--gray-light)',fontFamily:'var(--font)'},placeholder:'¿Qué hay que hacer?',value:form.title,onChange:e=>setForm({...form,title:e.target.value})}),
+          React.createElement('textarea',{style:{width:'100%',padding:'9px 11px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',fontSize:'13px',outline:'none',fontFamily:'var(--font)',resize:'vertical',minHeight:'56px'},placeholder:'Descripción (opcional)...',value:form.description||'',onChange:e=>setForm({...form,description:e.target.value})}),
+          React.createElement('div',{style:{display:'flex',gap:'10px',flexWrap:'wrap',alignItems:'center'}},
+            React.createElement('select',{style:{...ss,flex:1,minWidth:'130px'},value:form.assignedTo,onChange:e=>setForm({...form,assignedTo:e.target.value})},allUsers.map(u=>React.createElement('option',{key:u,value:u},u===me?.displayName?`Yo (${u})`:u))),
+            React.createElement('div',{style:{display:'flex',gap:'3px'}},['high','medium','low'].map(k=>React.createElement('button',{key:k,className:`btn btn-sm${form.priority===k?` btn-primary`:''} btn-pill`,onClick:()=>setForm({...form,priority:k}),style:{background:form.priority===k?PRIORITY[k].bg:'#fff',color:PRIORITY[k].color,borderColor:form.priority===k?PRIORITY[k].color:'var(--border)',fontWeight:'600'}},PRIORITY[k].label)))
+          ),
+          /* Lista */
+          lists.length>0&&React.createElement('div',null,
+            React.createElement('div',{style:{fontSize:'10px',fontWeight:'700',color:'var(--gray)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'5px'}},'LISTA'),
+            React.createElement('select',{value:form.listId||'',onChange:e=>setForm({...form,listId:e.target.value||null}),style:{...ss,width:'100%'}},
+              React.createElement('option',{value:''},'Sin lista'),
+              lists.filter(l=>l.isGlobal).length>0&&React.createElement('optgroup',{label:'Listas globales'},lists.filter(l=>l.isGlobal).map(l=>React.createElement('option',{key:l.id,value:l.id},'🌐 '+l.name))),
+              lists.filter(l=>l.createdBy===me?.displayName).sort((a,b)=>(a.order??99)-(b.order??99)).length>0&&React.createElement('optgroup',{label:'Mis listas'},lists.filter(l=>l.createdBy===me?.displayName).sort((a,b)=>(a.order??99)-(b.order??99)).map(l=>React.createElement('option',{key:l.id,value:l.id},l.name)))
+            )
+          ),
+          /* Inicio + Hs estimadas — opcional */
+          React.createElement('label',{style:{display:'flex',alignItems:'center',gap:'7px',cursor:'pointer',fontSize:'12px',color:'var(--gray)',padding:'4px 0'}},
+            React.createElement('input',{type:'checkbox',checked:modalOpen.startDate||!!(form.startDate||form.estimatedHours),onChange:e=>{setModalOpen(p=>({...p,startDate:e.target.checked}));if(!e.target.checked)setForm({...form,startDate:'',estimatedHours:''});},style:{accentColor:'var(--blue)'}}),
+            '📅 Agregar fecha de inicio / horas estimadas'
+          ),
+          (modalOpen.startDate||!!(form.startDate||form.estimatedHours))&&React.createElement('div',{style:{display:'flex',gap:'8px',alignItems:'center',background:'var(--blue-light)',borderRadius:'var(--radius-md)',padding:'7px 10px',border:'1px solid rgba(26,115,232,0.2)'}},
+            React.createElement('span',{style:{fontSize:'11px',color:'var(--gray)',flexShrink:0}},'📅 Inicio'),
+            React.createElement('input',{type:'date',value:form.startDate||'',onChange:e=>setForm({...form,startDate:e.target.value}),style:{flex:1,padding:'3px 6px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',fontSize:'12px',outline:'none',fontFamily:'var(--font)',background:'#fff'}}),
+            React.createElement('span',{style:{fontSize:'11px',color:'var(--gray)',flexShrink:0,marginLeft:'8px'}},'⏱ Hs est.'),
+            React.createElement('input',{type:'number',min:'0',step:'0.5',value:form.estimatedHours||'',onChange:e=>setForm({...form,estimatedHours:e.target.value}),placeholder:'0',style:{width:'52px',padding:'3px 6px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',fontSize:'12px',outline:'none',fontFamily:'var(--font)',background:'#fff'}})
+          ),
+          React.createElement('div',{style:{marginBottom:'2px'}},
+            React.createElement('div',{style:{fontSize:'10px',fontWeight:'700',color:'var(--gray)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'5px'}},'FECHA DE VENCIMIENTO'),
+            React.createElement('div',{style:{display:'flex',gap:'8px',alignItems:'center',flexWrap:'wrap'}},
+            !form.noExpiry&&React.createElement(React.Fragment,null,
+
+              React.createElement('input',{type:'date',min:free?undefined:today,value:form.dueDate,onChange:e=>setForm({...form,dueDate:e.target.value}),style:ss}),
+              React.createElement('select',{value:form.dueHour,onChange:e=>setForm({...form,dueHour:e.target.value}),style:ss},(free?Array.from({length:24},(_,i)=>i):validH).map(h=>React.createElement('option',{key:h,value:h.toString()},h.toString().padStart(2,'0')))),
+              React.createElement('span',{style:{color:'var(--gray)',fontWeight:'bold'}},':'),
+              React.createElement('select',{value:form.dueMinute,onChange:e=>setForm({...form,dueMinute:e.target.value}),style:ss},(free?Array.from({length:12},(_,i)=>i*5):validM).map(m=>React.createElement('option',{key:m,value:m.toString().padStart(2,'0')},m.toString().padStart(2,'0'))))
+            ),
+            React.createElement('label',{style:{display:'flex',alignItems:'center',gap:'6px',cursor:'pointer',marginLeft:'auto',fontSize:'12px',color:form.noExpiry?'var(--success)':'var(--gray)',whiteSpace:'nowrap',background:form.noExpiry?'#e6f4ea':'var(--gray-light)',padding:'5px 10px',borderRadius:'var(--radius-pill)',border:`1px solid ${form.noExpiry?'#c8e6c9':'var(--border)'}`,transition:'all 0.15s'}},
+              React.createElement('input',{type:'checkbox',checked:form.noExpiry||false,onChange:e=>setForm({...form,noExpiry:e.target.checked}),style:{accentColor:'var(--success)'}}),
+              '∞ Sin vencimiento'
+            )
+          )),
+          React.createElement('div',{style:{display:'flex',gap:'6px',alignItems:'flex-start',flexWrap:'wrap'}},
+            React.createElement('div',{style:{position:'relative'}},
+              React.createElement(Tooltip,{tip:'Configurar recurrencia'},
+                React.createElement('button',{className:`btn btn-pill btn-sm${(form.recurrence&&form.recurrence.type!=='none')?' btn-primary':''}`,onClick:()=>{setShowRemPop(false);setShowRecPop(!showRecPop);},style:{color:(form.recurrence&&form.recurrence.type!=='none')?'var(--purple)':'var(--gray)',background:(form.recurrence&&form.recurrence.type!=='none')?'#f3e8ff':'#fff',borderColor:(form.recurrence&&form.recurrence.type!=='none')?'var(--purple)':'var(--border)'}},
+                  '🔁 ',(form.recurrence&&form.recurrence.type!=='none')?recLabel(form.recurrence):'Recurrencia',
+                  (form.recurrence&&form.recurrence.type!=='none')&&React.createElement('span',{onClick:e=>{e.stopPropagation();setForm({...form,recurrence:null});setShowRecPop(false);},style:{marginLeft:'4px',opacity:0.6}},'✕')
+                )
+              ),
+              showRecPop&&React.createElement(RecurrencePanel,{value:form.recurrence,onChange:r=>setForm({...form,recurrence:r}),onClose:()=>setShowRecPop(false)})
+            ),
+            !assigningOther&&React.createElement('div',{style:{position:'relative'}},
+              React.createElement(Tooltip,{tip:'Recordatorio Slack'},
+                React.createElement('button',{className:`btn btn-pill btn-sm`,onClick:()=>{setShowRecPop(false);setShowRemPop(!showRemPop);},style:{color:form.reminderOffset>0?'var(--blue)':'var(--gray)',background:form.reminderOffset>0?'var(--blue-light)':'#fff',borderColor:form.reminderOffset>0?'var(--blue)':'var(--border)'}},
+                  '⏰ ',form.reminderOffset>0?(REMINDER_OPTS.find(o=>o.v===form.reminderOffset)?.l||'Recordatorio'):'Recordatorio',
+                  form.reminderOffset>0&&React.createElement('span',{onClick:e=>{e.stopPropagation();setForm({...form,reminderOffset:0});setShowRemPop(false);},style:{marginLeft:'4px',opacity:0.6}},'✕')
+                )
+              ),
+              showRemPop&&React.createElement('div',{className:'fade-up',style:{position:'absolute',top:'calc(100% + 4px)',left:0,zIndex:500,background:'#fff',border:'1px solid var(--border)',borderRadius:'var(--radius-lg)',boxShadow:'var(--shadow-md)',padding:'6px',minWidth:'200px'}},
+                REMINDER_OPTS.map(o=>React.createElement('div',{key:o.v,onClick:()=>{setForm({...form,reminderOffset:o.v});setShowRemPop(false);},style:{padding:'8px 12px',borderRadius:'var(--radius-md)',fontSize:'13px',cursor:'pointer',color:form.reminderOffset===o.v?'var(--blue)':'var(--text-primary)',background:form.reminderOffset===o.v?'var(--blue-light)':'transparent',fontWeight:form.reminderOffset===o.v?'600':'normal'}},o.l))
+              )
+            )
+          ),
+          /* Collapsible section buttons — same row as Recurrencia/Recordatorio */
+          React.createElement('div',{style:{display:'flex',gap:'6px',flexWrap:'wrap'}},
+            React.createElement('button',{onClick:()=>setModalOpen(p=>({...p,links:!p.links})),className:'btn btn-pill btn-sm',style:{color:modalOpen.links||((form.links||[]).length>0)?'var(--blue)':'var(--gray)',background:modalOpen.links||((form.links||[]).length>0)?'var(--blue-light)':'#fff',borderColor:modalOpen.links||((form.links||[]).length>0)?'var(--blue)':'var(--border)'}},
+              '🔗 Links'+((form.links||[]).length>0?` (${(form.links||[]).length})`:'')
+            ),
+            React.createElement('button',{onClick:()=>setModalOpen(p=>({...p,subtasks:!p.subtasks})),className:'btn btn-pill btn-sm',style:{color:modalOpen.subtasks||((form.subtasks||[]).length>0)?'var(--blue)':'var(--gray)',background:modalOpen.subtasks||((form.subtasks||[]).length>0)?'var(--blue-light)':'#fff',borderColor:modalOpen.subtasks||((form.subtasks||[]).length>0)?'var(--blue)':'var(--border)'}},
+              '☐ Subtareas'+((form.subtasks||[]).length>0?` (${(form.subtasks||[]).length})`:'')
+            ),
+            tasks.filter(t=>t.id!==form.id&&t.status!=='completed').length>0&&React.createElement('button',{onClick:()=>setModalOpen(p=>({...p,deps:!p.deps})),className:'btn btn-pill btn-sm',style:{color:modalOpen.deps||((form.dependsOn||[]).length>0)?'var(--orange)':'var(--gray)',background:modalOpen.deps||((form.dependsOn||[]).length>0)?'#fff3e0':'#fff',borderColor:modalOpen.deps||((form.dependsOn||[]).length>0)?'var(--orange)':'var(--border)'}},
+              '🔒 Bloqueada'+((form.dependsOn||[]).length>0?` (${(form.dependsOn||[]).length})`:'')
+            )
+          ),
+          /* Tags */
+          globalTags.length>0&&React.createElement('div',null,
+            React.createElement('div',{style:{fontSize:'10px',fontWeight:'700',color:'var(--gray)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'7px'}},'ETIQUETAS'),
+            React.createElement('div',{style:{display:'flex',gap:'6px',flexWrap:'wrap'}},
+              globalTags.map(tg=>React.createElement('span',{key:tg.id,className:'tag-chip',onClick:()=>{const cur=form.tags||[];setForm({...form,tags:cur.includes(tg.id)?cur.filter(x=>x!==tg.id):[...cur,tg.id]});},style:{background:(form.tags||[]).includes(tg.id)?tg.color:tg.color+'22',color:(form.tags||[]).includes(tg.id)?'#fff':tg.color,border:`1px solid ${tg.color}`,padding:'4px 10px',fontSize:'12px'}},tg.label))
+            )
+          ),
+          /* Links - expandable */
+          React.createElement('div',null,
+            modalOpen.links&&React.createElement('div',{style:{marginTop:'8px',padding:'10px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)'}},
+              (form.links||[]).map((lk,i)=>React.createElement('div',{key:i,style:{display:'flex',alignItems:'center',gap:'7px',marginBottom:'5px',padding:'5px 8px',background:'var(--gray-light)',borderRadius:'var(--radius-md)'}},React.createElement('span',{style:{fontSize:'12px'}},'🔗'),React.createElement('span',{style:{flex:1,fontSize:'12px',color:'var(--blue)'}},lk.label||lk.url),React.createElement('span',{onClick:()=>setForm({...form,links:(form.links||[]).filter((_,j)=>j!==i)}),style:{cursor:'pointer',color:'var(--error)',fontSize:'14px',opacity:0.7}},'✕'))),
+              React.createElement('div',{style:{display:'flex',gap:'6px',flexWrap:'wrap'}},
+                React.createElement('input',{placeholder:'Nombre del link',value:newLinkLabel,onChange:e=>setNewLinkLabel(e.target.value),style:{flex:'0 0 120px',padding:'6px 9px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',fontSize:'12px',outline:'none',fontFamily:'var(--font)'}}),
+                React.createElement('input',{placeholder:'https://...',value:newLinkUrl,onChange:e=>setNewLinkUrl(e.target.value),onKeyDown:e=>{if(e.key==='Enter'&&newLinkUrl.trim()){setForm({...form,links:[...(form.links||[]),{label:newLinkLabel||newLinkUrl,url:newLinkUrl}]});setNewLinkLabel('');setNewLinkUrl('');}},style:{flex:1,minWidth:'120px',padding:'6px 9px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',fontSize:'12px',outline:'none',fontFamily:'var(--font)'}}),
+                React.createElement(Btn,{variant:'primary',size:'sm',onClick:()=>{if(newLinkUrl.trim()){setForm({...form,links:[...(form.links||[]),{label:newLinkLabel||newLinkUrl,url:newLinkUrl}]});setNewLinkLabel('');setNewLinkUrl('');}}},'Agregar')
+              )
+            )
+          ),
+          /* Subtasks - expandable */
+          React.createElement('div',null,
+            modalOpen.subtasks&&React.createElement('div',{style:{marginTop:'8px',padding:'10px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)'}},
+              (form.subtasks||[]).map((st,i)=>React.createElement('div',{key:st.id,style:{display:'flex',alignItems:'center',gap:'7px',marginBottom:'5px',padding:'5px 8px',background:'var(--gray-light)',borderRadius:'var(--radius-md)'}},React.createElement('span',{style:{color:'var(--text-tertiary)',fontSize:'12px'}},'☐'),React.createElement('span',{style:{flex:1,fontSize:'13px'}},st.text),React.createElement('span',{onClick:()=>setForm({...form,subtasks:form.subtasks.filter((_,j)=>j!==i)}),style:{cursor:'pointer',color:'var(--error)',fontSize:'14px',opacity:0.7}},'✕'))),
+              React.createElement('div',{style:{display:'flex',gap:'7px'}},React.createElement('input',{placeholder:'Nueva subtarea (Enter)...',value:newSubIn,onChange:e=>setNewSubIn(e.target.value),onKeyDown:e=>{if(e.key==='Enter'&&newSubIn.trim()){setForm({...form,subtasks:[...(form.subtasks||[]),{id:Date.now().toString(),text:newSubIn,done:false}]});setNewSubIn('');}},style:{flex:1,padding:'6px 9px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',fontSize:'12px',outline:'none',fontFamily:'var(--font)'}}),React.createElement(Btn,{variant:'primary',size:'sm',onClick:()=>{if(newSubIn.trim()){setForm({...form,subtasks:[...(form.subtasks||[]),{id:Date.now().toString(),text:newSubIn,done:false}]});setNewSubIn('');}}},'Agregar'))
+            )
+          ),
+          /* Dependencias - expandable */
+          tasks.filter(t=>t.id!==form.id&&t.status!=='completed').length>0&&React.createElement('div',null,
+            modalOpen.deps&&React.createElement('div',{style:{marginTop:'8px',padding:'6px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)'}},
+              React.createElement('div',{style:{maxHeight:'110px',overflowY:'auto'}},
+                tasks.filter(t=>t.id!==form.id&&t.status!=='completed').map(t=>
+                  React.createElement('label',{key:t.id,style:{display:'flex',alignItems:'center',gap:'7px',padding:'5px 7px',cursor:'pointer',fontSize:'12px',borderRadius:'var(--radius-sm)',background:(form.dependsOn||[]).includes(t.id)?'var(--blue-light)':'transparent'}},
+                    React.createElement('input',{type:'checkbox',checked:(form.dependsOn||[]).includes(t.id),onChange:e=>{const deps=form.dependsOn||[];setForm({...form,dependsOn:e.target.checked?[...deps,t.id]:deps.filter(d=>d!==t.id)});}}),
+                    React.createElement('span',{style:{color:PRIORITY[t.priority]?.color||'var(--gray)',fontSize:'10px'}},'●'),
+                    React.createElement('span',{style:{flex:1}},t.title),
+                    React.createElement('span',{style:{fontSize:'10px',color:'var(--gray)',whiteSpace:'nowrap'}},t.assignedTo===me?.displayName?'Yo':t.assignedTo)
+                  )
+                )
+              ),
+              (form.dependsOn||[]).length>0&&React.createElement('div',{style:{fontSize:'11px',color:'var(--orange)',marginTop:'5px',padding:'4px'}},'🔒 Bloqueada por '+(form.dependsOn||[]).length+' tarea(s) sin completar')
+            )
+          ),
+          React.createElement('div',{style:{height:'4px'}})
+        ),
+        React.createElement('div',{style:{padding:'12px 22px',borderTop:'1px solid var(--border)',display:'flex',justifyContent:'flex-end',gap:'8px',flexShrink:0}},
+
+          React.createElement(Btn,{onClick:()=>{setShowModal(false);setModalOpen({links:false,subtasks:false,deps:false,startDate:false});}},'Cancelar'),
+          React.createElement(Btn,{variant:'primary',onClick:handleSaveTask},'Guardar')
+        )
+      )
+    );
+  };
+
+  /* ══ REASSIGN MODAL ══ */
+  const renderReassignModal=()=>{
+    if(!reassignTask)return null;
+    const myName=me?.displayName,mode=canReassign(reassignTask);
+    const opts=mode==='take'?[myName]:allUsers.filter(u=>u!==reassignTask.assignedTo);
+    return React.createElement('div',{onClick:e=>e.target===e.currentTarget&&setReassignTask(null),style:{position:'fixed',inset:0,background:'rgba(0,0,0,0.45)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1100}},
+      React.createElement('div',{className:'fade-up',style:{width:'360px',padding:'24px',background:'#fff',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-lg)'}},
+        React.createElement('h3',{style:{margin:'0 0 6px',fontSize:'15px'}},mode==='take'?'🙋 Tomar tarea':'🔀 Reasignar tarea'),
+        React.createElement('div',{style:{fontSize:'12px',color:'var(--gray)',marginBottom:'16px'}},mode==='take'?`Le quedan menos de 30 min. Actualmente en @${reassignTask.assignedTo}.`:`Actualmente en @${reassignTask.assignedTo}.`),
+        React.createElement('div',{style:{padding:'10px 12px',background:'var(--gray-light)',borderRadius:'var(--radius-md)',marginBottom:'16px',fontSize:'13px'}},
+          React.createElement('div',{style:{fontWeight:'500',marginBottom:'2px'}},reassignTask.title),
+          React.createElement('div',{style:{fontSize:'11px',color:'var(--gray)'}},`⏰ ${smartDate(reassignTask.dueTimestamp,reassignTask.noExpiry)}`)
+        ),
+        mode==='own'&&React.createElement('div',{style:{marginBottom:'16px'}},
+          React.createElement('label',{style:{fontSize:'11px',fontWeight:'700',color:'var(--gray)',textTransform:'uppercase',letterSpacing:'0.05em',display:'block',marginBottom:'4px'}},'Asignar a'),
+          React.createElement('select',{value:reassignTarget,onChange:e=>setReassignTarget(e.target.value),style:{width:'100%',padding:'9px 10px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',fontSize:'13px',cursor:'pointer',outline:'none',fontFamily:'var(--font)'}},opts.map(u=>React.createElement('option',{key:u,value:u},u===myName?`Yo (${u})`:u)))
+        ),
+        React.createElement('div',{style:{display:'flex',gap:'8px',justifyContent:'flex-end'}},
+          React.createElement(Btn,{onClick:()=>setReassignTask(null)},'Cancelar'),
+          React.createElement(Btn,{variant:'primary',onClick:handleReassign,style:{background:mode==='take'?'var(--orange)':'var(--blue)',borderColor:mode==='take'?'var(--orange)':'var(--blue)'}},mode==='take'?'Tomar tarea':'Reasignar')
+        )
+      )
+    );
+  };
+
+  /* ══ TEAM VIEW ══ */
+  const renderTeam=()=>{
+    const n=Date.now();
+    const stats=allUsers.map(u=>{const ut=tasks.filter(t=>t.assignedTo===u);return{user:u,vig:ut.filter(t=>(t.noExpiry||t.dueTimestamp>=n)&&t.status!=='completed').length,ven:ut.filter(t=>!t.noExpiry&&t.dueTimestamp<n&&t.status!=='completed').length,comp:ut.filter(t=>t.status==='completed').length,del:ut.filter(t=>t.status==='delayed').length};});
+    return React.createElement('div',{style:{flex:1,padding:'24px',overflowY:'auto',background:'#fff'}},
+      React.createElement('div',{style:{fontSize:'15px',fontWeight:'600',marginBottom:'18px',letterSpacing:'-0.02em'}},'👥  Vista de Equipo'),
+      React.createElement('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'12px'}},
+        stats.map(({user,vig,ven,comp,del})=>React.createElement('div',{key:user,className:'team-card',onClick:()=>{setSelUser(user);setShowTeam(false);},style:{border:'1px solid var(--border)',borderRadius:'var(--radius-lg)',padding:'14px',cursor:'pointer',background:'#fff',boxShadow:'var(--shadow-sm)'}},
+          React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'9px',marginBottom:'12px'}},React.createElement('div',{style:{width:'34px',height:'34px',borderRadius:'50%',background:'var(--blue)',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:'bold',fontSize:'14px',flexShrink:0}},user.charAt(0).toUpperCase()),React.createElement('div',null,React.createElement('div',{style:{fontWeight:'500',fontSize:'13px'}},user===me?.displayName?`${user} (Yo)`:user),React.createElement('div',{style:{fontSize:'11px',color:'var(--gray)'}},`${vig+ven} activas`))),
+          React.createElement('div',{style:{display:'flex',gap:'5px'}},[{n:vig,l:'Vigentes',bg:'var(--blue-light)',c:'var(--blue)'},{n:ven,l:'Vencidas',bg:'#fce8e6',c:'var(--error)'},{n:comp,l:'Hechas',bg:'#e6f4ea',c:'var(--success)'}].map(({n:num,l,bg,c})=>React.createElement('div',{key:l,style:{flex:1,textAlign:'center',padding:'6px 3px',background:bg,borderRadius:'var(--radius-md)'}},React.createElement('div',{style:{fontSize:'16px',fontWeight:'bold',color:c}},num),React.createElement('div',{style:{fontSize:'9px',color:'var(--gray)'}},l)))),
+          del>0&&React.createElement('div',{style:{marginTop:'7px',fontSize:'11px',color:'var(--error)',textAlign:'center'}},`⚠️ ${del} demorada${del>1?'s':''}`)
+        ))
+      )
+    );
+  };
+
+  /* ══ KANBAN VIEW ══ */
+  const renderKanban=()=>{
+    const n=Date.now();
+    let base=showTeam?[...tasks]:tasks.filter(t=>t.assignedTo===selUser||t.addedBy===me?.displayName);
+    if(selectedList)base=base.filter(t=>t.listId===selectedList);
+    if(searchQ.trim()){const q=searchQ.toLowerCase();base=base.filter(t=>t.title?.toLowerCase().includes(q)||t.description?.toLowerCase().includes(q));}
+    const KCOLS=[
+      {id:'vigentes', label:'En vigencia',   emoji:'✅', color:'var(--blue)',   bg:'var(--blue-light)',   tasks:base.filter(t=>t.status!=='completed'&&(t.noExpiry||t.dueTimestamp>=n))},
+      {id:'pormi',   label:'Asignadas por mí',emoji:'📋', color:'var(--purple)', bg:'#f3e8ff',            tasks:base.filter(t=>t.addedBy===me?.displayName&&t.assignedTo!==me?.displayName&&t.status!=='completed')},
+      {id:'vencidas',label:'Vencidas',        emoji:'⏰', color:'var(--error)',  bg:'#fce8e6',            tasks:base.filter(t=>!t.noExpiry&&t.dueTimestamp<n&&t.status!=='completed')},
+      {id:'completadas',label:'Completadas',  emoji:'🏁', color:'var(--success)',bg:'#e6f4ea',           tasks:base.filter(t=>t.status==='completed')},
+    ];
+    const changeStatus=async(task,newStatus)=>{
+      const log=[...(task.statusLog||[]),{from:task.status,to:newStatus,changedBy:me?.displayName,timestamp:Date.now()}];
+      await update(ref(db,`${DB_TASKS}/${task.id}`),{status:newStatus,statusLog:log});
+      _notifyCreator(SLACK_TOKEN,userMap,task,me?.displayName,'status',newStatus);
+    };
+    return React.createElement('div',{style:{flex:1,display:'flex',gap:'10px',padding:'14px',overflowX:'auto',background:'var(--gray-light)',alignItems:'flex-start'}},
+      KCOLS.map(col=>{
+        return React.createElement('div',{key:col.id,
+          style:{flex:'0 0 calc(25% - 8px)',minWidth:'240px',display:'flex',flexDirection:'column',gap:'8px',background:'rgba(255,255,255,0.7)',borderRadius:'var(--radius-lg)',padding:'10px',minHeight:'120px',boxShadow:'var(--shadow-sm)'}
+        },
+        React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'8px',padding:'4px 2px',borderBottom:'2px solid '+col.color+'33'}},
+          React.createElement('span',{style:{fontSize:'10px',fontWeight:'700',color:col.color,textTransform:'uppercase',letterSpacing:'0.06em',display:'flex',alignItems:'center',gap:'4px'}},col.emoji,' ',col.label),
+          React.createElement('span',{style:{background:col.bg,color:col.color,borderRadius:'var(--radius-pill)',padding:'2px 8px',fontSize:'11px',fontWeight:'700'}},col.tasks.length)
+        ),
+        col.tasks.map(t=>{
+          const p=PRIORITY[t.priority]||PRIORITY.medium;
+          const expired=!t.noExpiry&&t.dueTimestamp<n&&t.status!=='completed';
+          const isBlocked=(t.dependsOn||[]).some(id=>{const dep=tasks.find(x=>x.id===id);return dep&&dep.status!=='completed';});
+          const stDone=(t.subtasks||[]).filter(x=>x.done).length,stTot=(t.subtasks||[]).length;
+          const list=lists.find(l=>l.id===t.listId);
+          return React.createElement('div',{key:t.id,
+            onClick:()=>{setDetailId(detailId===t.id?null:t.id);setDetailTab('info');},
+            style:{background:'#fff',borderRadius:'var(--radius-lg)',padding:'10px 12px',boxShadow:'var(--shadow-sm)',cursor:'pointer',border:'1px solid '+(expired?'var(--error)':'var(--border)'),borderLeft:'3px solid '+p.color,opacity:isBlocked?0.75:1,transition:'box-shadow 0.12s'}
+          },
+          list&&React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'4px',marginBottom:'5px'}},
+            React.createElement('div',{style:{width:'6px',height:'6px',borderRadius:'50%',background:list.color,flexShrink:0}}),
+            React.createElement('span',{style:{fontSize:'10px',color:list.color,fontWeight:'600'}},list.name)
+          ),
+          React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:'6px',marginBottom:'6px'}},
+            React.createElement('div',{style:{fontSize:'13px',fontWeight:'500',lineHeight:1.4,color:t.status==='completed'?'var(--text-tertiary)':'var(--text-primary)',textDecoration:t.status==='completed'?'line-through':'none',flex:1}},
+              isBlocked&&React.createElement('span',{style:{fontSize:'11px',color:'var(--orange)',marginRight:'4px'}},'🔒'),
+              t.title
+            ),
+            React.createElement('select',{
+              value:t.status||'wip',
+              onClick:e=>e.stopPropagation(),
+              onChange:e=>{e.stopPropagation();changeStatus(t,e.target.value);},
+              style:{fontSize:'10px',padding:'2px 4px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',cursor:'pointer',outline:'none',fontFamily:'var(--font)',color:STATUS[t.status||'wip']?.color||'var(--gray)',background:STATUS[t.status||'wip']?.bg||'#fff',flexShrink:0,maxWidth:'100px'}
+            },
+              Object.entries(STATUS).map(([k,v])=>React.createElement('option',{key:k,value:k},v.label))
+            )
+          ),
+          stTot>0&&React.createElement('div',{style:{height:'3px',background:'var(--gray-mid)',borderRadius:'2px',marginBottom:'6px',overflow:'hidden'}},
+            React.createElement('div',{style:{height:'100%',width:`${stTot?(stDone/stTot)*100:0}%`,background:'var(--success)',borderRadius:'2px'}})
+          ),
+          React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:'3px',marginBottom:'6px'}},
+            React.createElement('span',{className:'badge',style:{background:p.bg,color:p.color,fontSize:'10px'}},p.label),
+            !t.noExpiry&&t.dueTimestamp&&React.createElement('span',{style:{fontSize:'10px',color:expired?'var(--error)':'var(--gray)'}},smartDate(t.dueTimestamp,false))
+          ),
+          React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',gap:'4px',borderTop:'1px solid var(--border)',paddingTop:'6px',flexWrap:'wrap'}},
+            React.createElement('span',{style:{fontSize:'10px',color:'var(--gray)',flex:1}},
+              (t.addedBy===me?.displayName?'Yo':t.addedBy)+' → '+(t.assignedTo===me?.displayName?'Yo':t.assignedTo)
+            ),
+            React.createElement('div',{style:{display:'flex',gap:'3px'}},
+              React.createElement('button',{title:'Ver detalle',onClick:e=>{e.stopPropagation();setDetailId(detailId===t.id?null:t.id);setDetailTab('info');},className:'icon-btn',style:{width:24,height:24,fontSize:12}},'👁'),
+              React.createElement('button',{title:'Editar',onClick:e=>{e.stopPropagation();setForm({...t,dueDate:t.dueTimestamp?new Date(t.dueTimestamp).toISOString().split('T')[0]:todayStr(),dueHour:t.dueTimestamp?new Date(t.dueTimestamp).getHours().toString():'9',dueMinute:t.dueTimestamp?new Date(t.dueTimestamp).getMinutes().toString().padStart(2,'0'):'00'});setShowModal(true);},className:'icon-btn',style:{width:24,height:24,fontSize:12}},'✏️'),
+              t.commentCount>0&&React.createElement('span',{style:{fontSize:'10px',color:'var(--gray)',display:'flex',alignItems:'center'}},'💬'+t.commentCount)
+            )
+          )
+          );
+        })
+        );
+      })
+    );
+  };
+
+  /* ══ SIDEBAR ══ */
+  const renderSidebar=()=>{
+    const w=sidebar?'252px':'52px',pd=sidebar?'8px 14px':'7px 8px',jc=sidebar?'flex-start':'center';
+    const SBHead=({label,k})=>sidebar?React.createElement('div',{onClick:()=>setSbSecs(p=>({...p,[k]:!p[k]})),style:{padding:'8px 14px 4px',fontSize:'11px',fontWeight:'800',color:'var(--brand-bg)',letterSpacing:'0.07em',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center',userSelect:'none'}},label,React.createElement('span',{style:{fontSize:'10px',color:'var(--text-tertiary)',transition:'transform 0.2s',display:'inline-block',transform:sbSecs[k]?'rotate(0deg)':'rotate(-90deg)'}},'▾')):null;
+    return React.createElement('div',{style:{width:w,minWidth:w,maxWidth:w,transition:'width 0.22s',borderRight:'1px solid var(--border)',display:'flex',flexDirection:'column',overflow:'hidden',background:'var(--gray-light)',flexShrink:0}},
+      React.createElement('div',{className:`sb-brand${sidebar?'':' sb-brand-collapsed'}`},
+        sidebar
+          ? React.createElement(React.Fragment,null,
+              React.createElement('img',{src:LOGO_SRC,alt:'Onbordea',className:'sb-brand-logo'}),
+              React.createElement(Tooltip,{tip:'Colapsar'},React.createElement('button',{className:'icon-btn',onClick:()=>setSidebar(false),style:{width:26,height:26,fontSize:13,color:'rgba(255,255,255,0.6)'}},'◀'))
+            )
+          : React.createElement(Tooltip,{tip:'Expandir'},React.createElement('button',{className:'icon-btn',onClick:()=>setSidebar(true),style:{width:30,height:30,fontSize:13,color:'rgba(255,255,255,0.7)'}},'▶'))
+      ),
+      React.createElement('div',{className:`sb-item${showTeam?' active':''}`,onClick:()=>setShowTeam(!showTeam),style:{padding:pd,gap:'7px',justifyContent:jc,fontSize:'13px',fontWeight:showTeam?'500':'normal',color:showTeam?'var(--blue)':'var(--gray)'}},'👥',sidebar&&'Equipo'),
+      React.createElement('div',{style:{flex:1,overflowY:'auto',paddingTop:'4px'}},
+        /* PRIORIDAD */
+        React.createElement(SBHead,{label:'PRIORIDAD',k:'prio'}),
+        sbSecs.prio&&['all','high','medium','low'].map(p=>React.createElement('div',{key:p,className:`sb-item${priFilter===p&&!showTeam?' active':''}`,onClick:()=>{setPriFilter(p);setShowTeam(false);},style:{padding:pd,gap:'7px',justifyContent:jc,fontSize:'13px',color:priFilter===p&&!showTeam?'var(--blue)':'var(--text-primary)'}},React.createElement('div',{style:{width:'8px',height:'8px',borderRadius:'50%',background:PRIORITY[p]?.color||'#9aa0a6',flexShrink:0}}),sidebar&&(p==='all'?'Todas':PRIORITY[p].label))),
+        /* LISTAS */
+        React.createElement(SBHead,{label:'LISTAS',k:'lists'}),
+        sbSecs.lists&&React.createElement(React.Fragment,null,
+          React.createElement('div',{className:'sb-item'+(!selectedList&&!showTeam?' active':''),onClick:()=>{setSelectedList(null);setShowTeam(false);},style:{padding:pd,gap:'7px',justifyContent:jc,fontSize:'13px',color:!selectedList&&!showTeam?'var(--blue)':'var(--text-primary)'}},
+            React.createElement('div',{style:{width:'8px',height:'8px',borderRadius:'50%',background:'var(--text-tertiary)',flexShrink:0}}),
+            sidebar&&'Todas'
+          ),
+          (()=>{
+            // My lists + global lists + other user's shared lists
+            const myLists=lists.filter(l=>l.createdBy===me?.displayName).sort((a,b)=>(a.order??99)-(b.order??99));
+            const globalLists=lists.filter(l=>l.isGlobal===true);
+            // Other user's lists visible to me (only when viewing their tasks)
+            const otherLists=isViewingOther?lists.filter(l=>l.createdBy===selUser&&!l.isGlobal&&(l.visibility==='public'||(l.visibility==='allow'&&(l.allowedUsers||[]).includes(me?.displayName)))):[];
+            const allVisible=[...globalLists,...myLists,...otherLists];
+            return allVisible.map((l,i)=>{
+              const isMyList=l.createdBy===me?.displayName;
+              const myIdx=myLists.indexOf(l);
+              return React.createElement('div',{
+                key:l.id,
+                className:'sb-item sb-list-item'+(selectedList===l.id&&!showTeam?' active':''),
+                onClick:()=>{setSelectedList(l.id);setShowTeam(false);},
+                draggable:isMyList&&sidebar,
+                onDragStart:()=>setListDragIdx(myIdx),
+                onDragOver:e=>{e.preventDefault();if(isMyList)setListDragOver(myIdx);},
+                onDragLeave:()=>setListDragOver(null),
+                onDrop:e=>{e.preventDefault();if(listDragIdx!==null&&listDragOver!==null&&listDragIdx!==listDragOver){handleReorderList(listDragIdx,listDragOver);}setListDragIdx(null);setListDragOver(null);},
+                style:{padding:pd,gap:'7px',justifyContent:jc,fontSize:'13px',
+                  outline:listDragOver===myIdx&&isMyList?'2px dashed var(--blue)':'none',
+                  opacity:listDragIdx===myIdx&&isMyList?0.5:1,
+                  background:selectedList===l.id&&!showTeam?'var(--blue-light)':undefined}
+              },
+              React.createElement('div',{style:{width:'8px',height:'8px',borderRadius:'50%',background:l.color,flexShrink:0}}),
+              sidebar&&React.createElement('span',{style:{flex:1,color:selectedList===l.id&&!showTeam?'var(--blue)':'var(--text-primary)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},
+                l.name,
+                !isMyList&&React.createElement('span',{style:{fontSize:'10px',color:'var(--gray)',marginLeft:'4px',flexShrink:0}}, l.isGlobal?'🌐':'('+l.createdBy+')')
+              ),
+              isMyList&&sidebar&&React.createElement('div',{className:'sb-list-actions',style:{display:'flex',gap:'2px',alignItems:'center'},onClick:e=>e.stopPropagation()},
+                React.createElement('span',{
+                  draggable:true,
+                  onDragStart:e=>{e.stopPropagation();setListDragIdx(myIdx);},
+                  style:{cursor:'grab',fontSize:'12px',color:'var(--gray)',padding:'2px',userSelect:'none',lineHeight:1}
+                },'⋮⋮'),
+                React.createElement('button',{
+                  onClick:e=>{e.stopPropagation();handleDeleteList(l.id);},
+                  style:{border:'none',background:'none',cursor:'pointer',color:'var(--error)',fontSize:'13px',padding:'1px 3px',lineHeight:1,opacity:0.8}
+                },'✕')
+              )
+              );
+            });
+          })(),
+          sidebar&&React.createElement('div',{className:'sb-item',onClick:()=>setShowListPop(true),style:{padding:'6px 14px',gap:'6px',justifyContent:'flex-start',fontSize:'12px',color:'var(--blue)',cursor:'pointer'}},
+            React.createElement('span',{style:{fontSize:'14px',lineHeight:1}},'＋'),
+            'Añadir lista'
+          )
+        ),
+        /* ETIQUETAS */
+        sidebar&&globalTags.length>0&&React.createElement('div',{style:{padding:'12px 14px 4px',fontSize:'10px',fontWeight:'700',color:'var(--text-tertiary)',letterSpacing:'0.06em'}},'ETIQUETAS'),
+        sidebar&&globalTags.map(tg=>React.createElement('div',{key:tg.id,className:`sb-item${tagFilter===tg.id?' active':''}`,onClick:()=>setTagFilter(tagFilter===tg.id?null:tg.id),style:{padding:pd,gap:'7px',justifyContent:'flex-start',fontSize:'13px'}},React.createElement('div',{style:{width:'8px',height:'8px',borderRadius:'50%',background:tg.color,flexShrink:0}}),React.createElement('span',{style:{color:tagFilter===tg.id?'var(--blue)':'var(--text-primary)'}},tg.label))),
+        /* EQUIPO */
+        React.createElement(SBHead,{label:'EQUIPO',k:'team'}),
+        sbSecs.team&&allUsers.map(u=>React.createElement('div',{key:u,className:`sb-item${selUser===u&&!showTeam?' active':''}`,onClick:()=>{setSelUser(u);setShowTeam(false);},style:{padding:sidebar?'6px 14px':'6px 8px',gap:'7px',justifyContent:jc,fontSize:'13px'}},React.createElement('div',{style:{width:'24px',height:'24px',borderRadius:'50%',flexShrink:0,background:selUser===u&&!showTeam?'var(--blue)':'#bdc1c6',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'10px',fontWeight:'bold'}},u.charAt(0).toUpperCase()),sidebar&&(u===me?.displayName?`Yo (${u})`:u)))
+      ),
+      isAdmin&&React.createElement(Tooltip,{tip:'Panel de administración',style:{width:'100%'}},React.createElement('div',{className:'sb-item',onClick:()=>setShowAdmin(true),style:{padding:pd,gap:'7px',justifyContent:jc,borderTop:'1px solid var(--border)',color:'var(--gold)',fontSize:'13px',fontWeight:'600'}},'⚙️',sidebar&&'Admin Panel')),
+      React.createElement(Tooltip,{tip:'Mi cuenta',style:{width:'100%'}},React.createElement('div',{className:'sb-item',onClick:()=>setShowSettings(true),style:{padding:pd,gap:'7px',justifyContent:jc,borderTop:isAdmin?'none':'1px solid var(--border)',color:'var(--gray)',fontSize:'13px'}},'👤',sidebar&&me?.displayName)),
+      /* LIST POPUP */
+      showListPop&&React.createElement('div',{onClick:e=>e.target===e.currentTarget&&setShowListPop(false),style:{position:'fixed',inset:0,background:'rgba(0,0,0,0.45)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1200}},
+        React.createElement('div',{className:'fade-up',style:{width:'340px',padding:'24px',background:'#fff',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-lg)'}},
+          React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'18px'}},
+            React.createElement('h3',{style:{margin:0,fontSize:'15px',fontWeight:'600'}},'Nueva lista'),
+            React.createElement('button',{onClick:()=>setShowListPop(false),className:'icon-btn',style:{width:28,height:28,fontSize:18}},'✕')
+          ),
+          React.createElement('div',{style:{marginBottom:'12px'}},
+            React.createElement('div',{style:{fontSize:'11px',fontWeight:'700',color:'var(--gray)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'5px'}},'NOMBRE'),
+            React.createElement('input',{placeholder:'Nombre de la lista',value:listPopName,onChange:e=>setListPopName(e.target.value),autoFocus:true,style:{width:'100%',padding:'9px 11px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',fontSize:'13px',outline:'none',fontFamily:'var(--font)'}})
+          ),
+          React.createElement('div',{style:{marginBottom:'12px',display:'flex',alignItems:'center',gap:'10px'}},
+            React.createElement('div',{style:{fontSize:'11px',fontWeight:'700',color:'var(--gray)',textTransform:'uppercase',letterSpacing:'0.05em'}},'COLOR'),
+            React.createElement('input',{type:'color',value:listPopColor,onChange:e=>setListPopColor(e.target.value),style:{width:'36px',height:'36px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',cursor:'pointer',padding:'2px'}}),
+            React.createElement('div',{style:{width:'24px',height:'24px',borderRadius:'50%',background:listPopColor}})
+          ),
+          React.createElement('div',{style:{marginBottom:'16px'}},
+            React.createElement('div',{style:{fontSize:'11px',fontWeight:'700',color:'var(--gray)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'8px'}},'VISIBILIDAD'),
+            React.createElement('div',{style:{display:'flex',gap:'6px',marginBottom:'10px'}},
+              ['private','public','allow'].map(v=>React.createElement('button',{key:v,onClick:()=>setListPopVis(v),className:'btn btn-sm',style:{flex:1,background:listPopVis===v?'var(--blue)':'#fff',color:listPopVis===v?'#fff':'var(--text-primary)',borderColor:listPopVis===v?'var(--blue)':'var(--border)',fontWeight:listPopVis===v?'600':'normal'}},{private:'🔒 Solo yo',public:'🌐 Todos',allow:'👥 Permitir a'}[v]))
+            ),
+            listPopVis==='allow'&&React.createElement('div',{style:{border:'1px solid var(--border)',borderRadius:'var(--radius-md)',padding:'6px',maxHeight:'120px',overflowY:'auto'}},
+              allUsers.filter(u=>u!==me?.displayName).map(u=>React.createElement('label',{key:u,style:{display:'flex',alignItems:'center',gap:'8px',padding:'5px 7px',cursor:'pointer',fontSize:'13px',borderRadius:'var(--radius-sm)'}},
+                React.createElement('input',{type:'checkbox',checked:listPopAllowed.includes(u),onChange:e=>setListPopAllowed(p=>e.target.checked?[...p,u]:p.filter(x=>x!==u))}),u
+              ))
+            )
+          ),
+          React.createElement('div',{style:{display:'flex',gap:'8px',justifyContent:'flex-end'}},
+            React.createElement('button',{onClick:()=>setShowListPop(false),className:'btn'},'Cancelar'),
+            React.createElement('button',{onClick:handleCreateListPop,className:'btn btn-primary'},'Crear lista')
+          )
+        )
+      )
+    );
+  };
+
+  /* ══ ADMIN PANEL ══ */
+  const renderAdmin=()=>{
+    if(!showAdmin)return null;
+    const invU=Object.entries(invites).filter(([,v])=>!v.usedBy);
+    const invD=Object.entries(invites).filter(([,v])=>v.usedBy);
+    const S=(t,ch)=>React.createElement('div',{style:{marginBottom:'20px'}},React.createElement('div',{style:{fontSize:'11px',fontWeight:'700',color:'var(--gray)',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'8px',paddingBottom:'5px',borderBottom:'1px solid var(--border)'  }},t),ch);
+    const saveAdm=async()=>{await update(ref(db,DB_CONFIG),{reportSchedule:{morningEnabled:adm.morningOn,morningTime:adm.morningT,afternoonEnabled:adm.afternoonOn,afternoonTime:adm.afternoonT}});showToast('✅ Configuración guardada');};
+    const genInvite=async()=>{const code=genCode();await set(ref(db,`${DB_INVITES}/${code}`),{createdBy:uid,createdAt:Date.now(),usedBy:null});showToast(`Código: ${code}`);};
+    return React.createElement('div',{onClick:e=>e.target===e.currentTarget&&setShowAdmin(false),style:{position:'fixed',inset:0,background:'rgba(0,0,0,0.4)',display:'flex',alignItems:'flex-start',justifyContent:'flex-end',zIndex:1000}},
+      React.createElement('div',{className:'fade-up',style:{width:'440px',height:'100vh',background:'#fff',boxShadow:'-4px 0 32px rgba(0,0,0,0.18)',overflowY:'auto',padding:'24px'}},
+        React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'20px'}},
+          React.createElement('div',null,React.createElement('div',{style:{fontSize:'15px',fontWeight:'700',letterSpacing:'-0.02em'}},'⚙️  Admin Panel'),React.createElement('div',{style:{fontSize:'10px',color:'var(--gold)',fontWeight:'700',letterSpacing:'0.06em',textTransform:'uppercase',marginTop:'2px'}},'Administrador')),
+          React.createElement('button',{onClick:()=>setShowAdmin(false),className:'icon-btn',style:{width:28,height:28,fontSize:18}},'✕')
+        ),
+        S('📊 Reportes → #todolist',React.createElement('div',null,
+          React.createElement('div',{style:{padding:'11px',background:'var(--blue-light)',borderRadius:'var(--radius-md)',marginBottom:'10px',border:'1px solid rgba(26,115,232,0.2)'}},
+            React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'6px'}},React.createElement('span',{style:{fontWeight:'600',fontSize:'13px',color:'var(--blue)'}},'🌅 Matutino'),React.createElement('label',{style:{display:'flex',alignItems:'center',gap:'6px',cursor:'pointer',fontSize:'12px',color:'var(--gray)'}},React.createElement('input',{type:'checkbox',checked:adm.morningOn,onChange:e=>setAdm({...adm,morningOn:e.target.checked})}),adm.morningOn?'Activo':'Inactivo')),
+            React.createElement('div',{style:{fontSize:'11px',color:'var(--gray)',marginBottom:'6px'}},'Vigentes, vencidas y completadas por usuario.'),
+            adm.morningOn&&React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'8px'}},React.createElement('span',{style:{fontSize:'12px',color:'var(--gray)'}},'Horario:'),React.createElement('input',{type:'time',value:adm.morningT,onChange:e=>setAdm({...adm,morningT:e.target.value}),style:{padding:'5px 8px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',fontSize:'13px',fontFamily:'var(--font)'}}))
+          ),
+          React.createElement('div',{style:{padding:'11px',background:'#fef7e0',borderRadius:'var(--radius-md)',border:'1px solid rgba(249,171,0,0.3)'}},
+            React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'6px'}},React.createElement('span',{style:{fontWeight:'600',fontSize:'13px',color:'var(--gold)'}},'🌆 Vespertino'),React.createElement('label',{style:{display:'flex',alignItems:'center',gap:'6px',cursor:'pointer',fontSize:'12px',color:'var(--gray)'}},React.createElement('input',{type:'checkbox',checked:adm.afternoonOn,onChange:e=>setAdm({...adm,afternoonOn:e.target.checked})}),adm.afternoonOn?'Activo':'Inactivo')),
+            React.createElement('div',{style:{fontSize:'11px',color:'var(--gray)',marginBottom:'6px'}},'Completadas hoy, vencidas hoy, pendientes totales.'),
+            adm.afternoonOn&&React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'8px'}},React.createElement('span',{style:{fontSize:'12px',color:'var(--gray)'}},'Horario:'),React.createElement('input',{type:'time',value:adm.afternoonT,onChange:e=>setAdm({...adm,afternoonT:e.target.value}),style:{padding:'5px 8px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',fontSize:'13px',fontFamily:'var(--font)'}}))
+          )
+        )),
+        React.createElement(Btn,{variant:'primary',onClick:saveAdm,style:{width:'100%',padding:'11px',marginBottom:'20px'}},'💾 Guardar configuración'),
+        S('🏷️ Etiquetas',React.createElement('div',null,
+          React.createElement('div',{style:{display:'flex',gap:'8px',marginBottom:'12px',flexWrap:'wrap'}},
+            React.createElement('input',{placeholder:'Nombre de etiqueta',value:newTagLabel,onChange:e=>setNewTagLabel(e.target.value),style:{flex:1,minWidth:'120px',padding:'7px 10px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',fontSize:'13px',outline:'none',fontFamily:'var(--font)'}}),
+            React.createElement('input',{type:'color',value:newTagColor,onChange:e=>setNewTagColor(e.target.value),style:{width:'38px',height:'36px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',cursor:'pointer',padding:'2px'}}),
+            React.createElement(Btn,{variant:'primary',size:'sm',onClick:handleCreateTag},'Crear')
+          ),
+          React.createElement('div',{style:{display:'flex',gap:'6px',flexWrap:'wrap'}},
+            globalTags.map(tg=>React.createElement('div',{key:tg.id,style:{display:'flex',alignItems:'center',gap:'4px',background:tg.color+'22',border:`1px solid ${tg.color}44`,borderRadius:'var(--radius-pill)',padding:'3px 8px'}},
+              React.createElement('div',{style:{width:'8px',height:'8px',borderRadius:'50%',background:tg.color,flexShrink:0}}),
+              React.createElement('span',{style:{fontSize:'12px',color:tg.color,fontWeight:'600'}},tg.label),
+              React.createElement('button',{onClick:()=>handleDeleteTag(tg.id),style:{border:'none',background:'none',cursor:'pointer',color:'var(--error)',fontSize:'12px',padding:'0',marginLeft:'2px',opacity:0.7}},'✕')
+            ))
+          )
+        )),
+        S('🌐 Listas Globales',React.createElement('div',null,
+          React.createElement('p',{style:{fontSize:'12px',color:'var(--gray)',marginBottom:'10px',lineHeight:1.5}},'Las listas globales aparecen para todos los usuarios en el selector de tareas y en el sidebar.'),
+          React.createElement('div',{style:{display:'flex',gap:'8px',marginBottom:'12px',flexWrap:'wrap'}},
+            React.createElement('input',{placeholder:'Nombre de la lista',value:newGlobalListName,onChange:e=>setNewGlobalListName(e.target.value),onKeyDown:e=>e.key==='Enter'&&handleCreateGlobalList(),style:{flex:1,minWidth:'120px',padding:'7px 10px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',fontSize:'13px',outline:'none',fontFamily:'var(--font)'}}),
+            React.createElement('input',{type:'color',value:newGlobalListColor,onChange:e=>setNewGlobalListColor(e.target.value),style:{width:'38px',height:'36px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',cursor:'pointer',padding:'2px'}}),
+            React.createElement(Btn,{variant:'primary',size:'sm',onClick:handleCreateGlobalList},'Crear')
+          ),
+          lists.filter(l=>l.isGlobal).length===0&&React.createElement('div',{style:{fontSize:'12px',color:'var(--gray)',fontStyle:'italic',marginBottom:'8px'}},'Sin listas globales.'),
+          React.createElement('div',{style:{display:'flex',gap:'6px',flexWrap:'wrap'}},
+            lists.filter(l=>l.isGlobal).map(l=>React.createElement('div',{key:l.id,style:{display:'flex',alignItems:'center',gap:'6px',background:l.color+'22',border:'1px solid '+l.color+'44',borderRadius:'var(--radius-pill)',padding:'4px 10px'}},
+              React.createElement('div',{style:{width:'8px',height:'8px',borderRadius:'50%',background:l.color,flexShrink:0}}),
+              React.createElement('span',{style:{fontSize:'12px',color:l.color,fontWeight:'600'}},l.name),
+              React.createElement('button',{onClick:()=>handleDeleteGlobalList(l.id),style:{border:'none',background:'none',cursor:'pointer',color:'var(--error)',fontSize:'12px',padding:'0',marginLeft:'4px',opacity:0.7}},'✕')
+            ))
+          )
+        )),
+        S('📋 Listas',React.createElement('div',null,
+          React.createElement('div',{style:{display:'flex',gap:'8px',marginBottom:'12px',flexWrap:'wrap'}},
+            React.createElement('input',{placeholder:'Nombre de lista',value:newListName,onChange:e=>setNewListName(e.target.value),style:{flex:1,minWidth:'120px',padding:'7px 10px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',fontSize:'13px',outline:'none',fontFamily:'var(--font)'}}),
+            React.createElement('input',{type:'color',value:newListColor,onChange:e=>setNewListColor(e.target.value),style:{width:'38px',height:'36px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',cursor:'pointer',padding:'2px'}}),
+            React.createElement(Btn,{variant:'primary',size:'sm',onClick:handleCreateList},'Crear')
+          ),
+          lists.length===0&&React.createElement('div',{style:{fontSize:'12px',color:'var(--gray)',fontStyle:'italic',marginBottom:'8px'}},'Sin listas. Crea una arriba.'),
+          React.createElement('div',{style:{display:'flex',gap:'6px',flexWrap:'wrap'}},
+            lists.map(l=>React.createElement('div',{key:l.id,style:{display:'flex',alignItems:'center',gap:'6px',background:l.color+'22',border:'1px solid '+l.color+'44',borderRadius:'var(--radius-pill)',padding:'4px 10px'}},
+              React.createElement('div',{style:{width:'8px',height:'8px',borderRadius:'50%',background:l.color,flexShrink:0}}),
+              React.createElement('span',{style:{fontSize:'12px',color:l.color,fontWeight:'600'}},l.name),
+              React.createElement('button',{onClick:()=>handleDeleteList(l.id),style:{border:'none',background:'none',cursor:'pointer',color:'var(--error)',fontSize:'12px',padding:'0',marginLeft:'2px',opacity:0.7}},'✕')
+            ))
+          )
+        )),
+        S('✉️ Invitaciones',React.createElement('div',null,
+
+          React.createElement(Btn,{variant:'primary',size:'sm',onClick:genInvite,style:{width:'100%',marginBottom:'12px'}},'+  Generar código'),
+          invU.length>0&&React.createElement('div',null,React.createElement('div',{style:{fontSize:'10px',fontWeight:'700',color:'var(--gray)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'5px'}},'Disponibles'),invU.map(([code])=>React.createElement('div',{key:code,style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'5px',padding:'6px 10px',background:'var(--gray-light)',borderRadius:'var(--radius-md)',border:'1px solid var(--border)'}},React.createElement('span',{className:'inv-code',onClick:()=>{navigator.clipboard?.writeText(code);showToast(`Copiado: ${code}`);}},code),React.createElement('span',{style:{fontSize:'11px',color:'var(--success)'}},'Disponible'),React.createElement('button',{onClick:async()=>confirm('¿Eliminar?')&&await remove(ref(db,`${DB_INVITES}/${code}`)),style:{border:'none',background:'none',cursor:'pointer',color:'var(--error)',fontSize:'13px',opacity:0.7}},'✕')))),
+          invD.length>0&&React.createElement('div',{style:{marginTop:'8px'}},React.createElement('div',{style:{fontSize:'10px',fontWeight:'700',color:'var(--gray)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'5px'}},'Utilizados'),invD.map(([code,v])=>React.createElement('div',{key:code,style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'5px',padding:'6px 10px',background:'var(--gray-mid)',borderRadius:'var(--radius-md)',border:'1px solid var(--border)',opacity:0.6}},React.createElement('span',{style:{fontFamily:'monospace',letterSpacing:'0.1em',fontSize:'13px',color:'var(--text-tertiary)'}},code),React.createElement('span',{style:{fontSize:'11px',color:'var(--gray)'}},`→ ${v.usedBy}`))))
+        )),
+        S('👥 Usuarios',React.createElement('div',null,
+          Object.entries(userMap).map(([id,u])=>{
+            const isSelf=id===uid;
+            return React.createElement('div',{key:id,style:{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 10px',borderRadius:'var(--radius-md)',background:isSelf?'var(--blue-light)':'var(--gray-light)',marginBottom:'5px',border:`1px solid ${isSelf?'rgba(26,115,232,0.3)':'var(--border)'}`}},
+              React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'9px'}},
+                React.createElement('div',{style:{width:'28px',height:'28px',borderRadius:'50%',background:u.isAdmin?'var(--gold)':'var(--blue)',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:'bold',fontSize:'12px'}},u.displayName?.charAt(0).toUpperCase()),
+                React.createElement('div',null,
+                  React.createElement('div',{style:{fontSize:'13px',fontWeight:'500'}},u.displayName,isSelf&&React.createElement('span',{style:{fontSize:'10px',color:'var(--blue)',marginLeft:'5px'}},'(vos)')),
+                  React.createElement('div',{style:{fontSize:'10px',color:'var(--gray)'}},id),
+                  u.slackMemberId&&React.createElement('div',{style:{fontSize:'10px',color:'var(--success)'}},`✅ Slack: ${u.slackMemberId}`)
+                )
+              ),
+              React.createElement('div',{style:{display:'flex',gap:'5px',alignItems:'center'}},
+                u.isAdmin
+                  ?React.createElement('span',{className:'badge',style:{background:'#fef7e0',color:'var(--gold)'}},'ADMIN')
+                  :React.createElement(Btn,{size:'sm',onClick:async()=>{if(confirm(`¿Hacer admin a ${u.displayName}?`)){await update(ref(db,`${DB_USERS}/${id}`),{isAdmin:true});showToast(`${u.displayName} es admin`);}}},'Admin'),
+                !isSelf&&!u.isAdmin&&React.createElement(Btn,{size:'sm',variant:'danger',onClick:()=>handleKickUser(id,u),style:{padding:'4px 8px',fontSize:'11px'}},'🚫 Expulsar')
+              )
+            );
+          })
+        ))
+      )
+    );
+  };
+
+  /* ══ AUTH ══ */
+  if(!uid){const isReg=authMode==='register';
+    return React.createElement('div',{style:{height:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'linear-gradient(135deg,#f8fafc 0%,#e8f0fe 60%,#f0f9ff 100%)',fontFamily:'var(--font)'}},
+      React.createElement('div',{className:'fade-up',style:{width:'360px',background:'#fff',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-lg)',overflow:'hidden'}},
+        React.createElement('div',{style:{background:'var(--brand-bg)',padding:'28px',textAlign:'center'}},
+          React.createElement('img',{src:LOGO_SRC,alt:'Onbordea',style:{height:'36px',marginBottom:'12px'}}),
+          React.createElement('div',{style:{fontSize:'20px',fontWeight:'600',color:'#fff'}})
+        ),
+        React.createElement('div',{style:{padding:'28px'}},
+          authErr&&React.createElement('div',{style:{background:'#fce8e6',color:'var(--error)',padding:'9px 12px',borderRadius:'var(--radius-md)',fontSize:'12px',marginBottom:'12px'}},authErr),
+          [['UserID','id','text'],['Contraseña','pass','password'],...(isReg?[['Tu nombre en Slack','slackName','text'],['Código de invitación','inviteCode','text']]:[])].map(([ph,f,t])=>React.createElement('input',{key:f,type:t,placeholder:ph,value:authForm[f],onChange:e=>setAuthForm({...authForm,[f]:t==='text'&&f==='inviteCode'?e.target.value.toUpperCase():e.target.value}),onKeyDown:e=>e.key==='Enter'&&handleAuth(),style:{width:'100%',padding:'10px 12px',marginBottom:'9px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',fontSize:'13px',outline:'none',fontFamily:'var(--font)',letterSpacing:f==='inviteCode'?'0.1em':'normal'}})),
+          isReg&&React.createElement('p',{style:{fontSize:'11px',color:'var(--gray)',margin:'0 0 10px',lineHeight:1.5}},'Si sos el primer usuario, el código puede quedar vacío — serás administrador.'),
+          React.createElement(Btn,{variant:'primary',onClick:handleAuth,disabled:authLoading,style:{width:'100%',padding:'11px',marginBottom:'12px',fontSize:'13px'}},authLoading?'Procesando…':isReg?'Crear cuenta':'Entrar'),
+          React.createElement('p',{onClick:()=>{setAuthMode(isReg?'login':'register');setAuthErr('');},style:{textAlign:'center',fontSize:'12px',color:'var(--blue)',cursor:'pointer',margin:0}},isReg?'¿Ya tenés cuenta? Iniciá sesión':'¿No tenés cuenta? Registrate')
+        )
+      )
+    );
+  }
+
+  const SecHdr=(label,count,open,toggle,bg,color)=>
+    React.createElement('div',{onClick:toggle,style:{
+      padding:'6px 20px',background:bg||'transparent',cursor:'pointer',
+      fontSize:'11px',fontWeight:'700',color:color||'var(--text-tertiary)',
+      display:'flex',justifyContent:'space-between',alignItems:'center',
+      borderBottom:'1px solid var(--border)',userSelect:'none',flexShrink:0,
+      letterSpacing:'0.04em',textTransform:'uppercase',
+    }},
+      React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'5px'}},
+        React.createElement('span',{style:{transition:'transform 0.15s',display:'inline-block',transform:open?'rotate(0deg)':'rotate(-90deg)',fontSize:'9px'}},'▾'),
+        label
+      ),
+      React.createElement('span',{style:{background:'rgba(0,0,0,0.06)',color:'inherit',padding:'1px 7px',borderRadius:'var(--radius-pill)',fontSize:'10px',fontWeight:'700'}},count)
+    );
+  const Empty=msg=>React.createElement('div',{style:{padding:'20px 24px',color:'var(--text-tertiary)',fontSize:'12px',textAlign:'center',fontStyle:'italic',letterSpacing:'0.01em'}},msg);
+
+  /* ══ MAIN RENDER ══ */
+  return React.createElement('div',{className:'app-root'},
+    toast.show&&React.createElement('div',{style:{position:'fixed',top:'20px',right:'20px',background:toast.type==='err'?'#dc2626':'#111827',color:'#fff',padding:'10px 16px',borderRadius:'var(--radius-lg)',fontSize:'13px',zIndex:99999,boxShadow:'var(--shadow-lg)',whiteSpace:'nowrap',pointerEvents:'none',display:'flex',alignItems:'center',gap:'8px',letterSpacing:'-0.01em'}},toast.type==='err'?'⚠️':'✓','  ',toast.msg),
+
+    renderSidebar(),
+
+    React.createElement('div',{className:'app-main'},
+      /* header */
+      React.createElement('div',{style:{padding:'8px 18px',display:'flex',alignItems:'center',borderBottom:'1px solid var(--border)',gap:'10px',flexWrap:'wrap',background:'#fff',minHeight:'48px',flexShrink:0}},
+        React.createElement('h2',{style:{fontSize:'14px',fontWeight:'600',margin:0,flex:'0 0 auto',letterSpacing:'-0.02em'}},
+          showTeam?'👥 Vista de Equipo':selUser===me?.displayName?'Mis Tareas':`Tareas de ${selUser}`
+        ),
+        /* Search bar */
+        React.createElement('div',{className:'search-wrap',style:{width:'200px'}},
+          React.createElement('span',{style:{color:'var(--gray)',fontSize:'14px',flexShrink:0}},'🔍'),
+          React.createElement('input',{placeholder:'Buscar...',value:searchQ,onChange:e=>setSearchQ(e.target.value)})
+        ),
+        /* Sort */
+        React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'4px',fontSize:'12px',color:'var(--gray)'}},
+          React.createElement('span',{style:{fontWeight:'500'}},'Ordenar:'),
+          React.createElement('select',{value:sortBy,onChange:e=>setSortBy(e.target.value),style:{border:'1px solid var(--border)',padding:'3px 7px',borderRadius:'var(--radius-md)',fontSize:'12px',cursor:'pointer',background:'#fff',fontFamily:'var(--font)'}},React.createElement('option',{value:'date'},'Creación'),React.createElement('option',{value:'priority'},'Prioridad'),React.createElement('option',{value:'vencimiento'},'Vencimiento')),
+          React.createElement('select',{value:sortDir,onChange:e=>setSortDir(e.target.value),style:{border:'1px solid var(--border)',padding:'3px 7px',borderRadius:'var(--radius-md)',fontSize:'12px',cursor:'pointer',background:'#fff',fontFamily:'var(--font)'}},React.createElement('option',{value:'asc'},'↑ Asc'),React.createElement('option',{value:'desc'},'↓ Desc'))
+        ),
+        /* Filter */
+        React.createElement('div',{className:'flt-menu',style:{display:'flex',alignItems:'center',gap:'4px',fontSize:'12px',color:'var(--gray)',position:'relative'}},
+          React.createElement('span',{style:{fontWeight:'500'}},'Filtrar:'),
+          React.createElement('button',{onClick:()=>setShowFltMenu(!showFltMenu),className:'btn btn-sm',style:{color:filterStatus?'var(--blue)':'var(--gray)',background:filterStatus?'var(--blue-light)':'#fff',borderColor:filterStatus?'var(--blue)':'var(--border)'}},`Estado${filterStatus?' ✓':''}▾`),
+          showFltMenu&&React.createElement('div',{style:{position:'absolute',top:'110%',left:0,background:'#fff',border:'1px solid var(--border)',borderRadius:'var(--radius-lg)',boxShadow:'var(--shadow-md)',padding:'10px',zIndex:20,minWidth:'180px'}},
+            React.createElement('label',{style:{fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',gap:'7px',marginBottom:'8px',fontWeight:'500'}},React.createElement('input',{type:'checkbox',checked:filterStatus,onChange:e=>setFilterStatus(e.target.checked)}),'Filtrar por estado'),
+            filterStatus&&React.createElement('div',{style:{borderLeft:'2px solid var(--border)',paddingLeft:'8px'}},Object.keys(STATUS).map(k=>React.createElement('label',{key:k,style:{display:'flex',alignItems:'center',gap:'6px',fontSize:'12px',marginBottom:'4px',cursor:'pointer'}},React.createElement('input',{type:'checkbox',checked:!!statusFlt[k],onChange:e=>setStatusFlt({...statusFlt,[k]:e.target.checked})}),STATUS[k].label)))
+          ),
+          filterStatus&&Object.keys(statusFlt).filter(k=>statusFlt[k]).map(k=>React.createElement('span',{key:k,className:'badge',style:{background:STATUS[k].bg,color:STATUS[k].color,cursor:'pointer'},onClick:()=>setStatusFlt({...statusFlt,[k]:false})},STATUS[k].label,' ✕'))
+        ),
+        !showTeam&&React.createElement('div',{style:{display:'flex',gap:'4px',marginLeft:'auto',flexShrink:0}},
+          React.createElement('button',{onClick:()=>setViewMode('list'),className:'btn btn-sm'+(viewMode==='list'?' btn-primary':''),style:{padding:'5px 10px'}},'☰ Lista'),
+          React.createElement('button',{onClick:()=>setViewMode('kanban'),className:'btn btn-sm'+(viewMode==='kanban'?' btn-primary':''),style:{padding:'5px 10px'}},'⊡ Kanban')
+        )
+      ),
+
+      /* Context banner when viewing another user's tasks */
+      isViewingOther&&!showTeam&&React.createElement('div',{className:'ctx-banner'},
+        React.createElement('span',null,`👁 Viendo tareas de `, React.createElement('strong',null,selUser)),
+        React.createElement('button',{onClick:()=>setSelUser(me?.displayName),className:'btn btn-sm',style:{color:'var(--orange)',borderColor:'var(--orange)',background:'transparent',fontSize:'11px'}},`Volver a mis tareas`)
+      ),
+
+      /* Task list or team view */
+      showTeam?renderTeam():viewMode==='kanban'?renderKanban():
+      React.createElement('div',{style:{flex:1,overflowY:'auto',background:'#fff'}},
+        SecHdr('Vigentes',curTasks.length,secs.cur,()=>toggleSec('cur'),'var(--blue-light)','var(--blue)'),
+        secs.cur&&(curTasks.length===0?Empty('Sin tareas vigentes'):curTasks.map(renderRow)),
+        SecHdr(isViewingOther?`Asignadas por ${selUser}`:'Asignadas por mí',asgnTasks.length,secs.asgn,()=>toggleSec('asgn'),'var(--gray-light)'),
+        secs.asgn&&(asgnTasks.length===0?Empty('No asignaste tareas a otros'):asgnTasks.map(renderRow)),
+        SecHdr('Vencidas',expTasks.length,secs.exp,()=>toggleSec('exp'),'#fce8e6','var(--error)'),
+        secs.exp&&(expTasks.length===0?Empty('Sin vencidas 🎉'):expTasks.map(renderRow)),
+        SecHdr('Completadas',doneTasks.length,secs.done,()=>toggleSec('done'),'var(--gray-mid)','var(--gray)'),
+        secs.done&&(doneTasks.length===0?Empty('Sin completadas aún'):doneTasks.map(renderRow))
+      )
+    ),
+
+    /* Detail panel — always in DOM, width animated */
+    React.createElement('div',{className:`panel-wrapper${detailTask?'':' closed'}`,style:{width:detailTask?'300px':'0',borderLeft:detailTask?'1px solid var(--border)':'none'}},
+      detailTask&&renderDetail()
+    ),
+
+    /* Thread panel — always in DOM, width animated (FIX layout bug) */
+    React.createElement('div',{className:`panel-wrapper${threadTask?'':' closed'}`,style:{width:threadTask?'320px':'0',borderLeft:threadTask?'1px solid var(--border)':'none'}},
+      threadTask&&React.createElement(ThreadPanel,{task:threadTask,myName:me?.displayName,comments:threadComments,onAddComment:handleAddComment,onClose:closeThread})
+    ),
+
+    /* FAB */
+    !showTeam&&React.createElement(Tooltip,{tip:'Nueva tarea'},
+      React.createElement('button',{onClick:()=>{const ml=lists.filter(l=>l.createdBy===me?.displayName).sort((a,b)=>(a.order??99)-(b.order??99));setForm({...blank(),listId:selectedList||ml[0]?.id||null});setShowRecPop(false);setShowRemPop(false);setShowModal(true);},style:{position:'fixed',bottom:'26px',right:`${26+(threadTask?334:0)+(detailTask?314:0)}px`,transition:'right 0.22s cubic-bezier(0.22,1,0.36,1)',width:'50px',height:'50px',borderRadius:'var(--radius-lg)',background:'var(--blue)',color:'#fff',border:'none',cursor:'pointer',fontSize:'22px',boxShadow:'0 4px 16px rgba(26,115,232,0.4)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:100}},'+')
+    ),
+
+    renderModal(),
+    renderReassignModal(),
+    renderAdmin(),
+    confirmDeleteTask&&React.createElement('div',{onClick:()=>setConfirmDeleteTask(null),style:{position:'fixed',inset:0,background:'rgba(15,23,42,0.6)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1500}},
+      React.createElement('div',{className:'fade-up',onClick:e=>e.stopPropagation(),style:{width:'360px',padding:'24px',background:'#fff',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-xl)'}},
+        React.createElement('div',{style:{width:'40px',height:'40px',borderRadius:'var(--radius-lg)',background:'#fff5f5',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'18px',marginBottom:'14px'}},'🗑️'),
+        React.createElement('div',{style:{fontSize:'15px',fontWeight:'600',marginBottom:'6px',letterSpacing:'-0.02em'}},'Eliminar tarea'),
+        React.createElement('div',{style:{fontSize:'13px',color:'var(--text-secondary)',marginBottom:'20px',lineHeight:1.6}},`¿Eliminar "${confirmDeleteTask.title}"? Esta acción no se puede deshacer.`),
+        React.createElement('div',{style:{display:'flex',gap:'8px',justifyContent:'flex-end'}},
+          React.createElement(Btn,{onClick:()=>setConfirmDeleteTask(null)},'Cancelar'),
+          React.createElement(Btn,{variant:'danger',onClick:doDeleteTask},'Eliminar')
+        )
+      )
+    ),
+
+    /* Settings */
+    showSettings&&React.createElement('div',{onClick:e=>e.target===e.currentTarget&&setShowSettings(false),style:{position:'fixed',inset:0,background:'rgba(0,0,0,0.4)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000}},
+      React.createElement('div',{className:'fade-up',style:{width:'340px',padding:'26px',background:'#fff',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-lg)'}},
+        React.createElement('h3',{style:{margin:'0 0 18px'}},'👤 Mi cuenta'),
+        React.createElement('div',{style:{padding:'12px',background:'var(--gray-light)',borderRadius:'var(--radius-md)',marginBottom:'16px'}},
+          React.createElement('div',{style:{fontSize:'11px',color:'var(--gray)',marginBottom:'2px'}},'UserID'),React.createElement('div',{style:{fontWeight:'600',fontSize:'13px'}},uid),
+          React.createElement('div',{style:{fontSize:'11px',color:'var(--gray)',marginTop:'8px',marginBottom:'2px'}},'Nombre Slack'),React.createElement('div',{style:{fontWeight:'600',fontSize:'13px',color:'var(--blue)'}},me?.displayName),
+          isAdmin&&React.createElement('div',{style:{marginTop:'8px',fontSize:'10px',color:'var(--gold)',fontWeight:'700',background:'#fef7e0',padding:'2px 7px',borderRadius:'var(--radius-sm)',display:'inline-block'}},'⚙️ Administrador')
+        ),
+        React.createElement('div',{style:{marginBottom:'16px'}},
+          React.createElement('div',{style:{fontSize:'11px',fontWeight:'700',color:'var(--gray)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'6px'}},'🔔 Slack Member ID'),
+          React.createElement('div',{style:{fontSize:'11px',color:'var(--gray)',marginBottom:'7px',lineHeight:1.5}},'Para recibir DMs de la app. En Slack: click en tu nombre → perfil → ⋯ → "Copy member ID".'),
+          React.createElement('input',{value:editMemberId||me?.slackMemberId||'',onChange:e=>setEditMemberId(e.target.value),placeholder:'U0XXXXXXXXX',style:{width:'100%',padding:'9px 11px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',fontSize:'13px',outline:'none',fontFamily:'monospace',letterSpacing:'0.04em'}}),
+          React.createElement(Btn,{variant:'primary',size:'sm',onClick:async()=>{const id=(editMemberId||'').trim();await update(ref(db,`${DB_USERS}/${uid}`),{slackMemberId:id});showToast(id?'✅ Member ID guardado':'Member ID eliminado');},style:{marginTop:'8px',width:'100%'}},'Guardar Member ID')
+        ),
+        React.createElement(Btn,{variant:'danger',onClick:()=>{localStorage.clear();location.reload();},style:{width:'100%',padding:'10px',marginBottom:'8px'}},'Cerrar sesión'),
+        React.createElement(Btn,{onClick:()=>setShowSettings(false),style:{width:'100%',padding:'10px'}},'Cerrar')
+      )
+    )
+  );
+}
+
+const root=ReactDOM.createRoot(document.getElementById('root'));
+root.render(React.createElement(App));
+</script>
+
+</body>
+</html>

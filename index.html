@@ -45,38 +45,152 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 }
 
 
-/* ══ Dark mode ══ */
+/* ══ Dark mode — Material Design 3 palette ══ */
+/* CAMBIO 1: Paleta reemplazada de slate/blue a MD3 (#202124, #303134) */
 [data-theme="dark"] {
-  --blue:#60a5fa; --blue-light:#1e3a5f; --blue-hover:#93c5fd;
-  --gray:#94a3b8; --gray-light:#1e293b; --gray-mid:#0f172a;
-  --border:#334155; --error:#f87171; --success:#4ade80;
-  --purple:#c084fc; --gold:#fbbf24; --orange:#fb923c;
-  --text-primary:#f1f5f9; --text-secondary:#94a3b8; --text-tertiary:#64748b;
-  --brand-bg:#0d1117;
+  --blue:#8ab4f8; --blue-light:#1a3a5c; --blue-hover:#aecbfa;
+  --gray:#9aa0a6; --gray-light:#303134; --gray-mid:#202124;
+  --border:#5f6368; --error:#f28b82; --success:#81c995;
+  --purple:#d7aefb; --gold:#fdd663; --orange:#fcad70;
+  --text-primary:#e8eaed; --text-secondary:#9aa0a6; --text-tertiary:#5f6368;
+  --brand-bg:#161618;
+  --md3-surface:#292a2d;
+  --md3-surface2:#35363a;
+  --md3-overlay:rgba(0,0,0,0.7);
+  --shadow-sm:0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md:0 4px 16px rgba(0,0,0,0.4);
+  --shadow-lg:0 10px 40px rgba(0,0,0,0.5);
 }
-[data-theme="dark"] body,[data-theme="dark"] #root,[data-theme="dark"] .app-root
-  { background:#0f172a; color:#f1f5f9; }
-[data-theme="dark"] .app-main>div,[data-theme="dark"] .panel-inner,
-[data-theme="dark"] .bs-sheet { background:#1e293b !important; color:#f1f5f9; }
-[data-theme="dark"] .task-row { color:#f1f5f9; border-bottom-color:#334155 !important; }
-[data-theme="dark"] .task-row:hover { background:#1e293b !important; }
-[data-theme="dark"] .btn { background:#1e293b !important; color:#94a3b8 !important; border-color:#334155 !important; }
-[data-theme="dark"] .btn:hover { background:#334155 !important; }
-[data-theme="dark"] .btn-primary { background:var(--blue) !important; color:#fff !important; border-color:var(--blue) !important; }
-[data-theme="dark"] .btn-danger { background:#3d1515 !important; color:#f87171 !important; border-color:#5a1d1d !important; }
-[data-theme="dark"] .search-wrap { background:#1e293b !important; border-color:#334155 !important; }
-[data-theme="dark"] .search-wrap input { color:#f1f5f9 !important; }
-[data-theme="dark"] .bottom-nav { background:#0d1117 !important; border-color:#334155 !important; }
-[data-theme="dark"] .bubble-me { background:#1a3a2a !important; }
-[data-theme="dark"] .bubble-other { background:#1e293b !important; }
-[data-theme="dark"] .ctx-banner { background:#1a1500 !important; border-color:#4a3800 !important; color:#fbbf24 !important; }
-[data-theme="dark"] input,[data-theme="dark"] textarea,[data-theme="dark"] select
-  { background:#0f172a !important; color:#f1f5f9 !important; border-color:#334155 !important; }
-[data-theme="dark"] .mention-popup { background:#1e293b !important; border-color:#334155 !important; }
-[data-theme="dark"] .sb-item { color:#94a3b8 !important; }
-[data-theme="dark"] .sb-item:hover { background:rgba(255,255,255,0.07) !important; }
-[data-theme="dark"] .sb-item.active { background:rgba(96,165,250,0.15) !important; color:var(--blue) !important; }
-[data-theme="dark"] .inv-code { background:#0f172a !important; border-color:#334155 !important; color:#f1f5f9 !important; }
+[data-theme="dark"] body,
+[data-theme="dark"] #root,
+[data-theme="dark"] .app-root { background:#202124; color:#e8eaed; }
+
+/* Surfaces — main areas */
+[data-theme="dark"] .app-main>div,
+[data-theme="dark"] .panel-inner { background:#292a2d !important; color:#e8eaed; }
+[data-theme="dark"] .bs-sheet { background:#292a2d !important; color:#e8eaed; }
+
+/* CORRECCIÓN CRÍTICA: Modales y paneles laterales */
+[data-theme="dark"] .modal-surface,
+[data-theme="dark"] [data-modal] { background:#292a2d !important; color:#e8eaed !important; }
+/* Inputs dentro de modales en dark mode */
+[data-theme="dark"] .modal-surface input:not([type="checkbox"]):not([type="color"]):not([type="radio"]),
+[data-theme="dark"] .modal-surface textarea,
+[data-theme="dark"] .modal-surface select { background:#35363a !important; color:#e8eaed !important; border-color:#5f6368 !important; }
+/* Secciones internas de modales */
+[data-theme="dark"] .modal-surface h3 { color:#e8eaed !important; }
+[data-theme="dark"] .modal-surface .fade-up { background:#292a2d !important; }
+
+/* Task rows */
+[data-theme="dark"] .task-row { color:#e8eaed; border-bottom-color:#5f6368 !important; }
+[data-theme="dark"] .task-row:hover { background:#35363a !important; }
+
+/* Buttons */
+[data-theme="dark"] .btn { background:#35363a !important; color:#9aa0a6 !important; border-color:#5f6368 !important; }
+[data-theme="dark"] .btn:hover { background:#3c3f43 !important; }
+[data-theme="dark"] .btn-primary { background:var(--blue) !important; color:#202124 !important; border-color:var(--blue) !important; }
+[data-theme="dark"] .btn-ghost { background:transparent !important; border-color:transparent !important; }
+[data-theme="dark"] .btn-ghost:hover { background:rgba(255,255,255,0.08) !important; }
+[data-theme="dark"] .btn-danger { background:#4e1a18 !important; color:#f28b82 !important; border-color:#6b2320 !important; }
+
+/* Search bar */
+[data-theme="dark"] .search-wrap { background:#35363a !important; border-color:#5f6368 !important; }
+[data-theme="dark"] .search-wrap input { color:#e8eaed !important; background:transparent !important; }
+[data-theme="dark"] .search-wrap:focus-within { background:#3c3f43 !important; border-color:var(--blue) !important; }
+
+/* Bottom nav */
+[data-theme="dark"] .bottom-nav { background:#292a2d !important; border-color:#5f6368 !important; }
+
+/* Chat bubbles */
+[data-theme="dark"] .bubble-me { background:#1e3a2a !important; }
+[data-theme="dark"] .bubble-other { background:#35363a !important; }
+
+/* Context banner */
+[data-theme="dark"] .ctx-banner { background:#2d2700 !important; border-color:#5f4c00 !important; color:#fdd663 !important; }
+
+/* Inputs — CORRECCIÓN: ya no quedan blancos en dark mode */
+[data-theme="dark"] input:not([type="checkbox"]):not([type="color"]):not([type="radio"]),
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  background:#35363a !important;
+  color:#e8eaed !important;
+  border-color:#5f6368 !important;
+}
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder { color:#5f6368 !important; }
+
+/* Sidebar items */
+[data-theme="dark"] .sb-item { color:#9aa0a6 !important; }
+[data-theme="dark"] .app-toolbar { background:var(--gray-light) !important; border-bottom-color:var(--border) !important; }
+[data-theme="dark"] .sb-item:hover { background:rgba(255,255,255,0.06) !important; }
+[data-theme="dark"] .sb-item.active { background:rgba(138,180,248,0.15) !important; color:var(--blue) !important; }
+
+/* Misc */
+[data-theme="dark"] .mention-popup { background:#35363a !important; border-color:#5f6368 !important; }
+[data-theme="dark"] .inv-code { background:#35363a !important; border-color:#5f6368 !important; color:#e8eaed !important; }
+[data-theme="dark"] .day-chip { background:#35363a !important; border-color:#5f6368 !important; color:#e8eaed !important; }
+[data-theme="dark"] .day-chip.on { background:var(--blue) !important; color:#202124 !important; border-color:var(--blue) !important; }
+[data-theme="dark"] .team-card { background:#35363a !important; border-color:#5f6368 !important; }
+[data-theme="dark"] .icon-btn { color:#9aa0a6 !important; }
+[data-theme="dark"] .icon-btn:hover { background:rgba(255,255,255,0.08) !important; }
+[data-theme="dark"] .icon-btn.active { background:rgba(138,180,248,0.15) !important; color:var(--blue) !important; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background:#5f6368; }
+
+/* ══ DARK MODE — Overrides adicionales para blancos hardcodeados ══ */
+/* Lista de tareas y equipo */
+[data-theme="dark"] .app-main [style*="background:'#fff'"],
+[data-theme="dark"] .app-main [style*='background:"#fff"'],
+[data-theme="dark"] .app-main [style*="background: #fff"],
+[data-theme="dark"] .app-main [style*="background: rgb(255"] { background:var(--md3-surface,#292a2d) !important; }
+
+/* Kanban cards */
+[data-theme="dark"] .kanban-board [style*="background:'#fff'"],
+[data-theme="dark"] .kanban-board [style*='background: "#fff"'],
+[data-theme="dark"] .kanban-col { background:rgba(41,42,45,0.85) !important; }
+/* Kanban task cards individual */
+[data-theme="dark"] .kanban-board > div > div > div[style*="background:'#fff'"],
+[data-theme="dark"] .kanban-board > div > div > div[style*="background: #fff"] { background:#35363a !important; }
+
+/* Recurrence popup & reminder popup */
+[data-theme="dark"] .fade-up[style*="background:'#fff'"],
+[data-theme="dark"] .fade-up[style*="background: #fff"],
+[data-theme="dark"] [style*="background:'#fff'"][style*="zIndex:500"],
+[data-theme="dark"] [style*="background:'#fff'"][style*="zIndex: 500"] {
+  background:#35363a !important; color:#e8eaed !important;
+  border-color:#5f6368 !important;
+}
+
+/* Team view cards */
+[data-theme="dark"] .team-card[style*="background:'#fff'"],
+[data-theme="dark"] .team-card[style*="background: #fff"] { background:#35363a !important; }
+
+/* Sort/filter inline selects and dropdowns */
+[data-theme="dark"] [style*="background:'#fff'"][style*="fontFamily:'var(--font)'"] { background:#35363a !important; }
+
+/* Global fallback: any remaining surface that explicitly sets white background */
+[data-theme="dark"] .app-main [style*="background:#fff"],
+[data-theme="dark"] .app-toolbar [style*="background:#fff"],
+[data-theme="dark"] .flt-menu [style*="background:#fff"] {
+  background:#35363a !important;
+  color:#e8eaed !important;
+}
+/* Task list scroll area */
+[data-theme="dark"] [style*="overflowY:'auto'"][style*="background:'#fff'"],
+[data-theme="dark"] [style*="overflowY: auto"][style*="background: #fff"] { background:#292a2d !important; }
+
+/* Detail panel */
+[data-theme="dark"] .panel-inner[style*="background:'#fff'"],
+[data-theme="dark"] .panel-inner [style*="background:'#fff'"],
+[data-theme="dark"] .panel-inner [style*="background:#fff"] { background:#292a2d !important; }
+
+/* Thread panel input row */
+[data-theme="dark"] [style*="background:'#fafafa'"] { background:#35363a !important; }
+[data-theme="dark"] [style*="background:'#f0f2f5'"] { background:#292a2d !important; }
+[data-theme="dark"] [style*="background:'#f8f9fa'"] { background:#35363a !important; }
+
+/* Auth screen */
+[data-theme="dark"] .auth-box { background:#292a2d !important; color:#e8eaed !important; box-shadow:0 8px 40px rgba(0,0,0,0.5) !important; }
+[data-theme="dark"] [style*="linear-gradient(135deg,#f8fafc"] { background:#202124 !important; }
 
 /* ══ Animations ══ */
 .fade-up  { animation: fadeUp  0.18s ease-out; }
@@ -289,6 +403,104 @@ input:focus, textarea:focus, select:focus {
 .team-card:hover { box-shadow: var(--shadow-md) !important; transform: translateY(-2px); }
 .sb-list-item .sb-list-actions { opacity:0; transition:opacity 0.12s; }
 .sb-list-item:hover .sb-list-actions { opacity:1; }
+
+/* ══ MOBILE-FIRST — CAMBIO 3 ══ */
+
+/* Bottom Navigation Bar — visible sólo en mobile */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 64px;
+  background: #fff;
+  border-top: 1px solid var(--border);
+  z-index: 200;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: space-around;
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.bn-item {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; flex: 1; cursor: pointer; border: none; background: none;
+  color: var(--text-tertiary); font-size: 10px; font-family: var(--font);
+  font-weight: 500; padding: 8px 4px;
+  transition: color 0.15s;
+}
+.bn-item.active { color: var(--blue); }
+.bn-item .bn-icon { font-size: 20px; line-height: 1; }
+.bn-item .bn-dot {
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--blue); margin-top: 2px;
+  opacity: 0; transition: opacity 0.15s;
+}
+.bn-item.active .bn-dot { opacity: 1; }
+
+/* Mobile overlay for sidebar drawer */
+.sidebar-overlay {
+  display: none;
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  z-index: 299; backdrop-filter: blur(2px);
+}
+
+@media (max-width: 768px) {
+  /* Show bottom nav, hide sidebar */
+  .bottom-nav { display: flex; }
+
+  /* Sidebar becomes a drawer from the left */
+  .app-sidebar-desktop { display: none !important; }
+  .app-sidebar-drawer {
+    position: fixed !important;
+    top: 0; left: -100%; bottom: 0;
+    width: 280px !important; min-width: 280px !important; max-width: 280px !important;
+    z-index: 300;
+    transition: left 0.25s cubic-bezier(0.4,0,0.2,1) !important;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.15);
+    overflow-y: auto;
+  }
+  .app-sidebar-drawer.open { left: 0 !important; }
+  .sidebar-overlay.open { display: block; }
+
+  /* Shift content up from bottom nav */
+  .app-main { padding-bottom: 64px; }
+
+  /* Toolbar: compact on mobile */
+  .app-toolbar { padding: 8px 12px !important; gap: 8px !important; }
+  .app-toolbar .search-wrap { min-width: 0 !important; flex: 1 !important; }
+
+  /* Kanban board: horizontal swipe with snap */
+  .kanban-board {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory !important;
+    -webkit-overflow-scrolling: touch;
+    padding: 12px 12px 76px !important;
+    gap: 12px !important;
+  }
+  .kanban-col {
+    flex: 0 0 82vw !important;
+    min-width: 0 !important;
+    scroll-snap-align: center !important;
+  }
+
+  /* FAB: lift above bottom nav */
+  .fab-btn { bottom: 84px !important; }
+
+  /* Panels: full screen on mobile */
+  .panel-wrapper:not(.closed) {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    z-index: 250;
+  }
+
+  /* Team view: single column */
+  .team-grid { grid-template-columns: 1fr !important; }
+
+  /* Auth screen */
+  .auth-box { width: 92vw !important; padding: 24px 18px !important; }
+}
 </style>
 
 <div id="root"></div>
@@ -478,7 +690,7 @@ function RecurrencePanel({value,onChange,onClose}){
   const ss={padding:'6px 8px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',fontSize:'13px',cursor:'pointer',outline:'none',fontFamily:'var(--font)'};
   const numI=(v,cb,mn=1,mx=99)=>React.createElement('input',{type:'number',min:mn,max:mx,value:v,onChange:e=>cb(Math.max(mn,Math.min(mx,parseInt(e.target.value)||mn))),style:{width:'52px',...ss,textAlign:'center'}});
   const lbl=t=>React.createElement('div',{style:{fontSize:'11px',fontWeight:'700',color:'var(--gray)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'5px'}},t);
-  return React.createElement('div',{className:'fade-up',style:{position:'absolute',top:'calc(100% + 4px)',left:0,zIndex:500,width:'320px',background:'#fff',border:'1px solid var(--border)',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-md)',padding:'18px'}},
+  return React.createElement('div',{className:'fade-up',style:{position:'absolute',top:'calc(100% + 4px)',left:0,zIndex:500,width:'320px',background:'var(--gray-light)',border:'1px solid var(--border)',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-md)',padding:'18px'}},
     React.createElement('div',{style:{display:'flex',gap:'4px',marginBottom:'14px',background:'var(--gray-light)',borderRadius:'var(--radius-lg)',padding:'3px'}},
       ['daily','weekly','monthly','specific'].map(t=>React.createElement('button',{key:t,onClick:()=>upd({type:t}),style:{flex:1,padding:'5px 2px',border:'none',borderRadius:'var(--radius-md)',cursor:'pointer',fontSize:'11px',fontWeight:'600',background:r.type===t?'#fff':'transparent',color:r.type===t?'var(--blue)':'var(--gray)',boxShadow:r.type===t?'0 1px 4px rgba(0,0,0,0.12)':'none',transition:'all 0.12s'}},{daily:'Diario',weekly:'Semanal',monthly:'Mensual',specific:'Específico'}[t]))
     ),
@@ -504,7 +716,7 @@ function ThreadPanel({task,myName,comments,onAddComment,onClose}){
   const renderText=t=>{if(!t)return'';return t.split(/(@\w[\w.-]*)/g).map((p,i)=>p.startsWith('@')?React.createElement('span',{key:i,style:{color:'var(--blue)',fontWeight:'bold'}},p):p);};
   const send=()=>{if(text.trim()){onAddComment(text);setText('');}};
   return React.createElement('div',{className:'panel-inner',style:{width:'320px'}},
-    React.createElement('div',{style:{padding:'12px 14px',borderBottom:'1px solid var(--border)',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0,background:'#fff'}},
+    React.createElement('div',{style:{padding:'12px 14px',borderBottom:'1px solid var(--border)',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0,background:'var(--gray-light)'}},
       React.createElement('div',null,
         React.createElement('div',{style:{fontWeight:'700',fontSize:'13px',color:'var(--blue)'}},'Hilo'),
         React.createElement('div',{style:{fontSize:'12px',color:'var(--text-primary)',maxWidth:'220px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},task.title),
@@ -524,7 +736,7 @@ function ThreadPanel({task,myName,comments,onAddComment,onClose}){
       comments.map((c,i)=>{const isMe=c.author===myName;return React.createElement('div',{key:i,style:{display:'flex',flexDirection:'column',alignItems:isMe?'flex-end':'flex-start'}},React.createElement('div',{className:isMe?'bubble-me':'bubble-other',style:{padding:'8px 11px',maxWidth:'88%',boxShadow:'0 1px 2px rgba(0,0,0,0.06)'}},React.createElement('div',{style:{fontSize:'10px',color:isMe?'#5a8a5a':'var(--blue)',fontWeight:'700',marginBottom:'3px'}},isMe?'Yo':c.author),React.createElement('div',{style:{fontSize:'13px',lineHeight:1.45}},renderText(c.text)),React.createElement('div',{style:{fontSize:'10px',color:'var(--gray)',marginTop:'3px',textAlign:'right'}},fmtTs(c.ts))));}),
       React.createElement('div',{ref:endRef})
     ),
-    React.createElement('div',{style:{padding:'10px 12px',background:'#fff',borderTop:'1px solid var(--border)',display:'flex',gap:'8px',alignItems:'center',flexShrink:0}},
+    React.createElement('div',{style:{padding:'10px 12px',background:'var(--gray-light)',borderTop:'1px solid var(--border)',display:'flex',gap:'8px',alignItems:'center',flexShrink:0}},
       React.createElement('input',{value:text,onChange:e=>setText(e.target.value),onKeyDown:e=>e.key==='Enter'&&send(),placeholder:'Responder... (@nombre)',style:{flex:1,padding:'8px 13px',borderRadius:'var(--radius-pill)',border:'1px solid var(--border)',outline:'none',fontSize:'13px',background:'#f8f9fa',fontFamily:'var(--font)'}}),
       React.createElement('button',{onClick:send,style:{width:34,height:34,borderRadius:'50%',background:'var(--blue)',color:'#fff',border:'none',cursor:'pointer',fontSize:'16px',display:'flex',alignItems:'center',justifyContent:'center'}},'➤')
     )
@@ -614,6 +826,8 @@ function App(){
   const [listDragIdx,setListDragIdx]=useState(null);
   const [confirmDeleteTask,setConfirmDeleteTask]=useState(null);
   const [listDragOver,setListDragOver]=useState(null);
+  /* CAMBIO 3: estado para sidebar móvil tipo drawer */
+  const [mobileSidebarOpen,setMobileSidebarOpen]=useState(false);
   const [listPopName,setListPopName]=useState('');
   const [listPopColor,setListPopColor]=useState('#1a73e8');
   const [listPopVis,setListPopVis]=useState('private');
@@ -940,7 +1154,7 @@ function App(){
     const log=(detailTask.statusLog||[]).slice().reverse();
     const taskTags=(detailTask.tags||[]).map(id=>globalTags.find(tg=>tg.id===id)).filter(Boolean);
     return React.createElement('div',{className:'panel-wrapper',style:{width:'300px',borderLeft:'1px solid var(--border)'}},
-      React.createElement('div',{className:'panel-inner',style:{width:'300px',background:'#fff'}},
+      React.createElement('div',{className:'panel-inner',style:{width:'300px',background:'var(--gray-light)'}},
         React.createElement('div',{style:{padding:'12px 13px 9px',borderBottom:'1px solid var(--border)',display:'flex',justifyContent:'space-between',alignItems:'flex-start',flexShrink:0}},
           React.createElement('div',{style:{flex:1,marginRight:'8px'}},
             React.createElement('div',{style:{fontSize:'13px',fontWeight:'600',lineHeight:1.4,marginBottom:'5px'}},detailTask.title),
@@ -993,7 +1207,7 @@ function App(){
     const ss={padding:'7px 9px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',fontSize:'13px',cursor:'pointer',outline:'none',fontFamily:'var(--font)'};
 
     return React.createElement('div',{onClick:e=>e.target===e.currentTarget&&setShowModal(false),style:{position:'fixed',inset:0,background:'rgba(15,23,42,0.55)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000}},
-      React.createElement('div',{className:'fade-up',style:{width:'480px',maxWidth:'95vw',background:'#fff',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-lg)',display:'flex',flexDirection:'column',maxHeight:'90vh',overflow:'hidden'}},
+      React.createElement('div',{className:'modal-surface fade-up',style:{width:'480px',maxWidth:'95vw',background:'#fff',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-lg)',display:'flex',flexDirection:'column',maxHeight:'90vh',overflow:'hidden'}},
         React.createElement('div',{style:{padding:'18px 22px 14px',borderBottom:'1px solid var(--border)',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}},
           React.createElement('h3',{style:{margin:0,fontSize:'14px',fontWeight:'600',letterSpacing:'-0.02em'}},form.id?'Editar tarea':'Nueva tarea'),
           React.createElement('button',{onClick:()=>{setShowModal(false);setModalOpen({links:false,subtasks:false,deps:false,startDate:false});},className:'icon-btn',style:{width:30,height:30,fontSize:18}},'✕')
@@ -1057,7 +1271,7 @@ function App(){
                   form.reminderOffset>0&&React.createElement('span',{onClick:e=>{e.stopPropagation();setForm({...form,reminderOffset:0});setShowRemPop(false);},style:{marginLeft:'4px',opacity:0.6}},'✕')
                 )
               ),
-              showRemPop&&React.createElement('div',{className:'fade-up',style:{position:'absolute',top:'calc(100% + 4px)',left:0,zIndex:500,background:'#fff',border:'1px solid var(--border)',borderRadius:'var(--radius-lg)',boxShadow:'var(--shadow-md)',padding:'6px',minWidth:'200px'}},
+              showRemPop&&React.createElement('div',{className:'fade-up',style:{position:'absolute',top:'calc(100% + 4px)',left:0,zIndex:500,background:'var(--gray-light)',border:'1px solid var(--border)',borderRadius:'var(--radius-lg)',boxShadow:'var(--shadow-md)',padding:'6px',minWidth:'200px'}},
                 REMINDER_OPTS.map(o=>React.createElement('div',{key:o.v,onClick:()=>{setForm({...form,reminderOffset:o.v});setShowRemPop(false);},style:{padding:'8px 12px',borderRadius:'var(--radius-md)',fontSize:'13px',cursor:'pointer',color:form.reminderOffset===o.v?'var(--blue)':'var(--text-primary)',background:form.reminderOffset===o.v?'var(--blue-light)':'transparent',fontWeight:form.reminderOffset===o.v?'600':'normal'}},o.l))
               )
             )
@@ -1132,7 +1346,7 @@ function App(){
     const myName=me?.displayName,mode=canReassign(reassignTask);
     const opts=mode==='take'?[myName]:allUsers.filter(u=>u!==reassignTask.assignedTo);
     return React.createElement('div',{onClick:e=>e.target===e.currentTarget&&setReassignTask(null),style:{position:'fixed',inset:0,background:'rgba(0,0,0,0.45)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1100}},
-      React.createElement('div',{className:'fade-up',style:{width:'360px',padding:'24px',background:'#fff',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-lg)'}},
+      React.createElement('div',{className:'modal-surface fade-up',style:{width:'360px',padding:'24px',background:'#fff',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-lg)'}},
         React.createElement('h3',{style:{margin:'0 0 6px',fontSize:'15px'}},mode==='take'?'🙋 Tomar tarea':'🔀 Reasignar tarea'),
         React.createElement('div',{style:{fontSize:'12px',color:'var(--gray)',marginBottom:'16px'}},mode==='take'?`Le quedan menos de 30 min. Actualmente en @${reassignTask.assignedTo}.`:`Actualmente en @${reassignTask.assignedTo}.`),
         React.createElement('div',{style:{padding:'10px 12px',background:'var(--gray-light)',borderRadius:'var(--radius-md)',marginBottom:'16px',fontSize:'13px'}},
@@ -1155,10 +1369,10 @@ function App(){
   const renderTeam=()=>{
     const n=Date.now();
     const stats=allUsers.map(u=>{const ut=tasks.filter(t=>t.assignedTo===u);return{user:u,vig:ut.filter(t=>(t.noExpiry||t.dueTimestamp>=n)&&t.status!=='completed').length,ven:ut.filter(t=>!t.noExpiry&&t.dueTimestamp<n&&t.status!=='completed').length,comp:ut.filter(t=>t.status==='completed').length,del:ut.filter(t=>t.status==='delayed').length};});
-    return React.createElement('div',{style:{flex:1,padding:'24px',overflowY:'auto',background:'#fff'}},
+    return React.createElement('div',{style:{flex:1,padding:'24px',overflowY:'auto',background:'var(--gray-light)'}},
       React.createElement('div',{style:{fontSize:'15px',fontWeight:'600',marginBottom:'18px',letterSpacing:'-0.02em'}},'👥  Vista de Equipo'),
-      React.createElement('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'12px'}},
-        stats.map(({user,vig,ven,comp,del})=>React.createElement('div',{key:user,className:'team-card',onClick:()=>{setSelUser(user);setShowTeam(false);},style:{border:'1px solid var(--border)',borderRadius:'var(--radius-lg)',padding:'14px',cursor:'pointer',background:'#fff',boxShadow:'var(--shadow-sm)'}},
+      React.createElement('div',{className:'team-grid',style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'12px'}},
+        stats.map(({user,vig,ven,comp,del})=>React.createElement('div',{key:user,className:'team-card',onClick:()=>{setSelUser(user);setShowTeam(false);},style:{border:'1px solid var(--border)',borderRadius:'var(--radius-lg)',padding:'14px',cursor:'pointer',background:'var(--gray-light)',boxShadow:'var(--shadow-sm)'}},
           React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'9px',marginBottom:'12px'}},React.createElement('div',{style:{width:'34px',height:'34px',borderRadius:'50%',background:'var(--blue)',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:'bold',fontSize:'14px',flexShrink:0}},user.charAt(0).toUpperCase()),React.createElement('div',null,React.createElement('div',{style:{fontWeight:'500',fontSize:'13px'}},user===me?.displayName?`${user} (Yo)`:user),React.createElement('div',{style:{fontSize:'11px',color:'var(--gray)'}},`${vig+ven} activas`))),
           React.createElement('div',{style:{display:'flex',gap:'5px'}},[{n:vig,l:'Vigentes',bg:'var(--blue-light)',c:'var(--blue)'},{n:ven,l:'Vencidas',bg:'#fce8e6',c:'var(--error)'},{n:comp,l:'Hechas',bg:'#e6f4ea',c:'var(--success)'}].map(({n:num,l,bg,c})=>React.createElement('div',{key:l,style:{flex:1,textAlign:'center',padding:'6px 3px',background:bg,borderRadius:'var(--radius-md)'}},React.createElement('div',{style:{fontSize:'16px',fontWeight:'bold',color:c}},num),React.createElement('div',{style:{fontSize:'9px',color:'var(--gray)'}},l)))),
           del>0&&React.createElement('div',{style:{marginTop:'7px',fontSize:'11px',color:'var(--error)',textAlign:'center'}},`⚠️ ${del} demorada${del>1?'s':''}`)
@@ -1184,9 +1398,9 @@ function App(){
       await update(ref(db,`${DB_TASKS}/${task.id}`),{status:newStatus,statusLog:log});
       _notifyCreator(SLACK_TOKEN,userMap,task,me?.displayName,'status',newStatus);
     };
-    return React.createElement('div',{style:{flex:1,display:'flex',gap:'10px',padding:'14px',overflowX:'auto',background:'var(--gray-light)',alignItems:'flex-start'}},
+    return React.createElement('div',{className:'kanban-board',style:{flex:1,display:'flex',gap:'10px',padding:'14px',overflowX:'auto',background:'var(--gray-light)',alignItems:'flex-start'}},
       KCOLS.map(col=>{
-        return React.createElement('div',{key:col.id,
+        return React.createElement('div',{key:col.id,className:'kanban-col',
           style:{flex:'0 0 calc(25% - 8px)',minWidth:'240px',display:'flex',flexDirection:'column',gap:'8px',background:'rgba(255,255,255,0.7)',borderRadius:'var(--radius-lg)',padding:'10px',minHeight:'120px',boxShadow:'var(--shadow-sm)'}
         },
         React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'8px',padding:'4px 2px',borderBottom:'2px solid '+col.color+'33'}},
@@ -1201,7 +1415,7 @@ function App(){
           const list=lists.find(l=>l.id===t.listId);
           return React.createElement('div',{key:t.id,
             onClick:()=>{setDetailId(detailId===t.id?null:t.id);setDetailTab('info');},
-            style:{background:'#fff',borderRadius:'var(--radius-lg)',padding:'10px 12px',boxShadow:'var(--shadow-sm)',cursor:'pointer',border:'1px solid '+(expired?'var(--error)':'var(--border)'),borderLeft:'3px solid '+p.color,opacity:isBlocked?0.75:1,transition:'box-shadow 0.12s'}
+            style:{background:'var(--gray-light)',borderRadius:'var(--radius-lg)',padding:'10px 12px',boxShadow:'var(--shadow-sm)',cursor:'pointer',border:'1px solid '+(expired?'var(--error)':'var(--border)'),borderLeft:'3px solid '+p.color,opacity:isBlocked?0.75:1,transition:'box-shadow 0.12s'}
           },
           list&&React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'4px',marginBottom:'5px'}},
             React.createElement('div',{style:{width:'6px',height:'6px',borderRadius:'50%',background:list.color,flexShrink:0}}),
@@ -1249,7 +1463,7 @@ function App(){
   const renderSidebar=()=>{
     const w=sidebar?'252px':'52px',pd=sidebar?'8px 14px':'7px 8px',jc=sidebar?'flex-start':'center';
     const SBHead=({label,k})=>sidebar?React.createElement('div',{onClick:()=>setSbSecs(p=>({...p,[k]:!p[k]})),style:{padding:'8px 14px 4px',fontSize:'11px',fontWeight:'800',color:'var(--brand-bg)',letterSpacing:'0.07em',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center',userSelect:'none'}},label,React.createElement('span',{style:{fontSize:'10px',color:'var(--text-tertiary)',transition:'transform 0.2s',display:'inline-block',transform:sbSecs[k]?'rotate(0deg)':'rotate(-90deg)'}},'▾')):null;
-    return React.createElement('div',{style:{width:w,minWidth:w,maxWidth:w,transition:'width 0.22s',borderRight:'1px solid var(--border)',display:'flex',flexDirection:'column',overflow:'hidden',background:'var(--gray-light)',flexShrink:0}},
+    return React.createElement('div',{className:`app-sidebar-desktop app-sidebar-drawer${mobileSidebarOpen?' open':''}`,style:{width:w,minWidth:w,maxWidth:w,transition:'width 0.22s',borderRight:'1px solid var(--border)',display:'flex',flexDirection:'column',overflow:'hidden',background:'var(--gray-light)',flexShrink:0}},
       React.createElement('div',{className:`sb-brand${sidebar?'':' sb-brand-collapsed'}`},
         sidebar
           ? React.createElement(React.Fragment,null,
@@ -1329,7 +1543,7 @@ function App(){
       React.createElement(Tooltip,{tip:'Mi cuenta',style:{width:'100%'}},React.createElement('div',{className:'sb-item',onClick:()=>setShowSettings(true),style:{padding:pd,gap:'7px',justifyContent:jc,borderTop:isAdmin?'none':'1px solid var(--border)',color:'var(--gray)',fontSize:'13px'}},'👤',sidebar&&me?.displayName)),
       /* LIST POPUP */
       showListPop&&React.createElement('div',{onClick:e=>e.target===e.currentTarget&&setShowListPop(false),style:{position:'fixed',inset:0,background:'rgba(0,0,0,0.45)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1200}},
-        React.createElement('div',{className:'fade-up',style:{width:'340px',padding:'24px',background:'#fff',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-lg)'}},
+        React.createElement('div',{className:'modal-surface fade-up',style:{width:'340px',padding:'24px',background:'#fff',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-lg)'}},
           React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'18px'}},
             React.createElement('h3',{style:{margin:0,fontSize:'15px',fontWeight:'600'}},'Nueva lista'),
             React.createElement('button',{onClick:()=>setShowListPop(false),className:'icon-btn',style:{width:28,height:28,fontSize:18}},'✕')
@@ -1379,7 +1593,7 @@ function App(){
     };
     const genInvite=async()=>{const code=genCode();await set(ref(db,`${DB_INVITES}/${code}`),{createdBy:uid,createdAt:Date.now(),usedBy:null});showToast(`Código: ${code}`);};
     return React.createElement('div',{onClick:e=>e.target===e.currentTarget&&setShowAdmin(false),style:{position:'fixed',inset:0,background:'rgba(0,0,0,0.4)',display:'flex',alignItems:'flex-start',justifyContent:'flex-end',zIndex:1000}},
-      React.createElement('div',{className:'fade-up',style:{width:'440px',height:'100vh',background:'#fff',boxShadow:'-4px 0 32px rgba(0,0,0,0.18)',overflowY:'auto',padding:'24px'}},
+      React.createElement('div',{className:'modal-surface fade-up',style:{width:'440px',height:'100vh',background:'#fff',boxShadow:'-4px 0 32px rgba(0,0,0,0.18)',overflowY:'auto',padding:'24px'}},
         React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'20px'}},
           React.createElement('div',null,React.createElement('div',{style:{fontSize:'15px',fontWeight:'700',letterSpacing:'-0.02em'}},'⚙️  Admin Panel'),React.createElement('div',{style:{fontSize:'10px',color:'var(--gold)',fontWeight:'700',letterSpacing:'0.06em',textTransform:'uppercase',marginTop:'2px'}},'Administrador')),
           React.createElement('button',{onClick:()=>setShowAdmin(false),className:'icon-btn',style:{width:28,height:28,fontSize:18}},'✕')
@@ -1476,7 +1690,7 @@ function App(){
   /* ══ AUTH ══ */
   if(!uid){const isReg=authMode==='register';
     return React.createElement('div',{style:{height:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'linear-gradient(135deg,#f8fafc 0%,#e8f0fe 60%,#f0f9ff 100%)',fontFamily:'var(--font)'}},
-      React.createElement('div',{className:'fade-up',style:{width:'360px',background:'#fff',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-lg)',overflow:'hidden'}},
+      React.createElement('div',{className:'auth-box fade-up',style:{width:'360px',background:'#fff',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-lg)',overflow:'hidden'}},
         React.createElement('div',{style:{background:'var(--brand-bg)',padding:'28px',textAlign:'center'}},
           React.createElement('img',{src:LOGO_SRC,alt:'Onbordea',style:{height:'36px',marginBottom:'12px'}}),
           React.createElement('div',{style:{fontSize:'20px',fontWeight:'600',color:'#fff'}})
@@ -1516,7 +1730,7 @@ function App(){
 
     React.createElement('div',{className:'app-main'},
       /* header */
-      React.createElement('div',{style:{padding:'8px 18px',display:'flex',alignItems:'center',borderBottom:'1px solid var(--border)',gap:'10px',flexWrap:'wrap',background:'#fff',minHeight:'48px',flexShrink:0}},
+      React.createElement('div',{className:'app-toolbar',style:{padding:'8px 18px',display:'flex',alignItems:'center',borderBottom:'1px solid var(--border)',gap:'10px',flexWrap:'wrap',background:'var(--gray-light)',minHeight:'48px',flexShrink:0}},
         React.createElement('h2',{style:{fontSize:'14px',fontWeight:'600',margin:0,flex:'0 0 auto',letterSpacing:'-0.02em'}},
           showTeam?'👥 Vista de Equipo':selUser===me?.displayName?'Mis Tareas':`Tareas de ${selUser}`
         ),
@@ -1528,21 +1742,21 @@ function App(){
         /* Sort */
         React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'4px',fontSize:'12px',color:'var(--gray)'}},
           React.createElement('span',{style:{fontWeight:'500'}},'Ordenar:'),
-          React.createElement('select',{value:sortBy,onChange:e=>setSortBy(e.target.value),style:{border:'1px solid var(--border)',padding:'3px 7px',borderRadius:'var(--radius-md)',fontSize:'12px',cursor:'pointer',background:'#fff',fontFamily:'var(--font)'}},React.createElement('option',{value:'date'},'Creación'),React.createElement('option',{value:'priority'},'Prioridad'),React.createElement('option',{value:'vencimiento'},'Vencimiento')),
-          React.createElement('select',{value:sortDir,onChange:e=>setSortDir(e.target.value),style:{border:'1px solid var(--border)',padding:'3px 7px',borderRadius:'var(--radius-md)',fontSize:'12px',cursor:'pointer',background:'#fff',fontFamily:'var(--font)'}},React.createElement('option',{value:'asc'},'↑ Asc'),React.createElement('option',{value:'desc'},'↓ Desc'))
+          React.createElement('select',{value:sortBy,onChange:e=>setSortBy(e.target.value),style:{border:'1px solid var(--border)',padding:'3px 7px',borderRadius:'var(--radius-md)',fontSize:'12px',cursor:'pointer',background:'var(--gray-light)',fontFamily:'var(--font)',color:'var(--text-primary)'}},React.createElement('option',{value:'date'},'Creación'),React.createElement('option',{value:'priority'},'Prioridad'),React.createElement('option',{value:'vencimiento'},'Vencimiento')),
+          React.createElement('select',{value:sortDir,onChange:e=>setSortDir(e.target.value),style:{border:'1px solid var(--border)',padding:'3px 7px',borderRadius:'var(--radius-md)',fontSize:'12px',cursor:'pointer',background:'var(--gray-light)',fontFamily:'var(--font)',color:'var(--text-primary)'}},React.createElement('option',{value:'asc'},'↑ Asc'),React.createElement('option',{value:'desc'},'↓ Desc'))
         ),
         /* Filter */
         React.createElement('div',{className:'flt-menu',style:{display:'flex',alignItems:'center',gap:'4px',fontSize:'12px',color:'var(--gray)',position:'relative'}},
           React.createElement('span',{style:{fontWeight:'500'}},'Filtrar:'),
           React.createElement('button',{onClick:()=>setShowFltMenu(!showFltMenu),className:'btn btn-sm',style:{color:filterStatus?'var(--blue)':'var(--gray)',background:filterStatus?'var(--blue-light)':'#fff',borderColor:filterStatus?'var(--blue)':'var(--border)'}},`Estado${filterStatus?' ✓':''}▾`),
-          showFltMenu&&React.createElement('div',{style:{position:'absolute',top:'110%',left:0,background:'#fff',border:'1px solid var(--border)',borderRadius:'var(--radius-lg)',boxShadow:'var(--shadow-md)',padding:'10px',zIndex:20,minWidth:'180px'}},
+          showFltMenu&&React.createElement('div',{style:{position:'absolute',top:'110%',left:0,background:'var(--gray-light)',border:'1px solid var(--border)',borderRadius:'var(--radius-lg)',boxShadow:'var(--shadow-md)',padding:'10px',zIndex:20,minWidth:'180px'}},
             React.createElement('label',{style:{fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',gap:'7px',marginBottom:'8px',fontWeight:'500'}},React.createElement('input',{type:'checkbox',checked:filterStatus,onChange:e=>setFilterStatus(e.target.checked)}),'Filtrar por estado'),
             filterStatus&&React.createElement('div',{style:{borderLeft:'2px solid var(--border)',paddingLeft:'8px'}},Object.keys(STATUS).map(k=>React.createElement('label',{key:k,style:{display:'flex',alignItems:'center',gap:'6px',fontSize:'12px',marginBottom:'4px',cursor:'pointer'}},React.createElement('input',{type:'checkbox',checked:!!statusFlt[k],onChange:e=>setStatusFlt({...statusFlt,[k]:e.target.checked})}),STATUS[k].label)))
           ),
           filterStatus&&Object.keys(statusFlt).filter(k=>statusFlt[k]).map(k=>React.createElement('span',{key:k,className:'badge',style:{background:STATUS[k].bg,color:STATUS[k].color,cursor:'pointer'},onClick:()=>setStatusFlt({...statusFlt,[k]:false})},STATUS[k].label,' ✕'))
         ),
-        React.createElement('button',{onClick:toggleDark,title:darkMode?'Modo claro':'Modo oscuro',style:{background:'none',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',fontSize:'14px',cursor:'pointer',padding:'4px 9px',marginLeft:'auto',flexShrink:0}},darkMode?'☀️':'🌙'),
-        !showTeam&&React.createElement('div',{style:{display:'flex',gap:'4px',flexShrink:0}},
+        /* CAMBIO 2: toggle de tema movido a Configuración Personal */
+        !showTeam&&React.createElement('div',{style:{display:'flex',gap:'4px',flexShrink:0,marginLeft:'auto'}},
           React.createElement('button',{onClick:()=>setViewMode('list'),className:'btn btn-sm'+(viewMode==='list'?' btn-primary':''),style:{padding:'5px 10px'}},'☰ Lista'),
           React.createElement('button',{onClick:()=>setViewMode('kanban'),className:'btn btn-sm'+(viewMode==='kanban'?' btn-primary':''),style:{padding:'5px 10px'}},'⊡ Kanban')
         )
@@ -1556,7 +1770,7 @@ function App(){
 
       /* Task list or team view */
       showTeam?renderTeam():viewMode==='kanban'?renderKanban():
-      React.createElement('div',{style:{flex:1,overflowY:'auto',background:'#fff'}},
+      React.createElement('div',{style:{flex:1,overflowY:'auto',background:'var(--gray-light)'}},
         SecHdr('Vigentes',curTasks.length,secs.cur,()=>toggleSec('cur'),'var(--blue-light)','var(--blue)'),
         secs.cur&&(curTasks.length===0?Empty('Sin tareas vigentes'):curTasks.map(renderRow)),
         SecHdr(isViewingOther?`Asignadas por ${selUser}`:'Asignadas por mí',asgnTasks.length,secs.asgn,()=>toggleSec('asgn'),'var(--gray-light)'),
@@ -1578,16 +1792,38 @@ function App(){
       threadTask&&React.createElement(ThreadPanel,{task:threadTask,myName:me?.displayName,comments:threadComments,onAddComment:handleAddComment,onClose:closeThread})
     ),
 
-    /* FAB */
+    /* FAB — CAMBIO 3: clase fab-btn para elevar sobre bottom nav en móvil */
     !showTeam&&React.createElement(Tooltip,{tip:'Nueva tarea'},
-      React.createElement('button',{onClick:()=>{const ml=lists.filter(l=>l.createdBy===me?.displayName).sort((a,b)=>(a.order??99)-(b.order??99));setForm({...blank(),listId:selectedList||ml[0]?.id||null});setShowRecPop(false);setShowRemPop(false);setShowModal(true);},style:{position:'fixed',bottom:'26px',right:`${26+(threadTask?334:0)+(detailTask?314:0)}px`,transition:'right 0.22s cubic-bezier(0.22,1,0.36,1)',width:'50px',height:'50px',borderRadius:'var(--radius-lg)',background:'var(--blue)',color:'#fff',border:'none',cursor:'pointer',fontSize:'22px',boxShadow:'0 4px 16px rgba(26,115,232,0.4)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:100}},'+')
+      React.createElement('button',{className:'fab-btn',onClick:()=>{const ml=lists.filter(l=>l.createdBy===me?.displayName).sort((a,b)=>(a.order??99)-(b.order??99));setForm({...blank(),listId:selectedList||ml[0]?.id||null});setShowRecPop(false);setShowRemPop(false);setShowModal(true);},style:{position:'fixed',bottom:'26px',right:`${26+(threadTask?334:0)+(detailTask?314:0)}px`,transition:'right 0.22s cubic-bezier(0.22,1,0.36,1)',width:'50px',height:'50px',borderRadius:'var(--radius-lg)',background:'var(--blue)',color:'#fff',border:'none',cursor:'pointer',fontSize:'22px',boxShadow:'0 4px 16px rgba(26,115,232,0.4)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:100}},'+')
+    ),
+
+    /* CAMBIO 3: Sidebar overlay (tap para cerrar en móvil) */
+    React.createElement('div',{className:`sidebar-overlay${mobileSidebarOpen?' open':''}`,onClick:()=>setMobileSidebarOpen(false)}),
+
+    /* CAMBIO 3: Bottom Navigation Bar — visible solo en móvil (<768px) */
+    React.createElement('nav',{className:'bottom-nav'},
+      React.createElement('button',{className:`bn-item${!showTeam&&viewMode==='list'?' active':''}`,onClick:()=>{setShowTeam(false);setViewMode('list');setMobileSidebarOpen(false);}},
+        React.createElement('span',{className:'bn-icon'},'☰'),React.createElement('span',null,'Lista'),React.createElement('div',{className:'bn-dot'})
+      ),
+      React.createElement('button',{className:`bn-item${!showTeam&&viewMode==='kanban'?' active':''}`,onClick:()=>{setShowTeam(false);setViewMode('kanban');setMobileSidebarOpen(false);}},
+        React.createElement('span',{className:'bn-icon'},'⊡'),React.createElement('span',null,'Kanban'),React.createElement('div',{className:'bn-dot'})
+      ),
+      React.createElement('button',{className:`bn-item${showTeam?' active':''}`,onClick:()=>{setShowTeam(true);setMobileSidebarOpen(false);}},
+        React.createElement('span',{className:'bn-icon'},'👥'),React.createElement('span',null,'Equipo'),React.createElement('div',{className:'bn-dot'})
+      ),
+      React.createElement('button',{className:'bn-item',onClick:()=>setMobileSidebarOpen(!mobileSidebarOpen)},
+        React.createElement('span',{className:'bn-icon'},'☰'),React.createElement('span',null,'Filtros')
+      ),
+      React.createElement('button',{className:'bn-item',onClick:()=>setShowSettings(true)},
+        React.createElement('span',{className:'bn-icon'},'👤'),React.createElement('span',null,'Mi cuenta')
+      )
     ),
 
     renderModal(),
     renderReassignModal(),
     renderAdmin(),
     confirmDeleteTask&&React.createElement('div',{onClick:()=>setConfirmDeleteTask(null),style:{position:'fixed',inset:0,background:'rgba(15,23,42,0.6)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1500}},
-      React.createElement('div',{className:'fade-up',onClick:e=>e.stopPropagation(),style:{width:'360px',padding:'24px',background:'#fff',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-xl)'}},
+      React.createElement('div',{className:'modal-surface fade-up',onClick:e=>e.stopPropagation(),style:{width:'360px',padding:'24px',background:'#fff',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-xl)'}},
         React.createElement('div',{style:{width:'40px',height:'40px',borderRadius:'var(--radius-lg)',background:'#fff5f5',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'18px',marginBottom:'14px'}},'🗑️'),
         React.createElement('div',{style:{fontSize:'15px',fontWeight:'600',marginBottom:'6px',letterSpacing:'-0.02em'}},'Eliminar tarea'),
         React.createElement('div',{style:{fontSize:'13px',color:'var(--text-secondary)',marginBottom:'20px',lineHeight:1.6}},`¿Eliminar "${confirmDeleteTask.title}"? Esta acción no se puede deshacer.`),
@@ -1600,7 +1836,7 @@ function App(){
 
     /* Settings */
     showSettings&&React.createElement('div',{onClick:e=>e.target===e.currentTarget&&setShowSettings(false),style:{position:'fixed',inset:0,background:'rgba(0,0,0,0.4)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000}},
-      React.createElement('div',{className:'fade-up',style:{width:'340px',padding:'26px',background:'#fff',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-lg)'}},
+      React.createElement('div',{className:'modal-surface fade-up',style:{width:'340px',padding:'26px',background:'#fff',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-lg)'}},
         React.createElement('h3',{style:{margin:'0 0 18px'}},'👤 Mi cuenta'),
         React.createElement('div',{style:{padding:'12px',background:'var(--gray-light)',borderRadius:'var(--radius-md)',marginBottom:'16px'}},
           React.createElement('div',{style:{fontSize:'11px',color:'var(--gray)',marginBottom:'2px'}},'UserID'),React.createElement('div',{style:{fontWeight:'600',fontSize:'13px'}},uid),

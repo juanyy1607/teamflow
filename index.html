@@ -56,151 +56,136 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 }
 
 
-/* ══ Dark mode ══ */
+/* ══ Dark mode — Google Material style ══ */
 [data-theme="dark"] {
-  --blue:#34D399; --blue-light:#064E3B; --blue-hover:#6EE7B7;
-  --gray:#94A3B8; --gray-light:#1E293B; --gray-mid:#0F172A;
-  --border:#334155; --error:#F87171; --success:#34D399;
-  --purple:#d7aefb; --gold:#fdd663; --orange:#fcad70;
-  --text-primary:#F1F5F9; --text-secondary:#94A3B8; --text-tertiary:#475569;
-  --brand-bg:#0a1628;
-  --md3-surface:#1E293B;
-  --md3-surface2:#273549;
-  --md3-overlay:rgba(0,0,0,0.7);
-  --shadow-sm:0 1px 3px rgba(0,0,0,0.3);
-  --shadow-md:0 4px 16px rgba(0,0,0,0.4);
-  --shadow-lg:0 10px 40px rgba(0,0,0,0.5);
+  /* Google-style surfaces */
+  --blue: #1DE9B6;
+  --blue-light: #003D33;
+  --blue-hover: #64FFDA;
+  --gray: #9AA0A6;
+  --gray-light: #292A2D;   /* surface */
+  --gray-mid: #202124;     /* background */
+  --border: #3C4043;
+  --error: #F28B82;
+  --success: #1DE9B6;
+  --purple: #D7AEFB;
+  --gold: #FDD663;
+  --orange: #FCAD70;
+  --text-primary: #E8EAED;
+  --text-secondary: #9AA0A6;
+  --text-tertiary: #5F6368;
+  --brand-bg: #191C1F;
+  --md3-surface: #292A2D;
+  --md3-surface2: #35363A;
+  --md3-overlay: rgba(0,0,0,0.6);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-md: 0 2px 10px rgba(0,0,0,0.5);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.6);
+  --shadow-xl: 0 16px 48px rgba(0,0,0,0.7);
 }
 [data-theme="dark"] body,
 [data-theme="dark"] #root,
-[data-theme="dark"] .app-root { background:#0F172A; color:#F1F5F9; }
+[data-theme="dark"] .app-root { background:#202124; color:#E8EAED; }
 
-/* Surfaces — main areas */
+/* Surfaces */
 [data-theme="dark"] .app-main>div,
-[data-theme="dark"] .panel-inner { background:#1E293B !important; color:#F1F5F9; }
-[data-theme="dark"] .bs-sheet { background:#1E293B !important; color:#F1F5F9; }
+[data-theme="dark"] .panel-inner { background:#292A2D !important; color:#E8EAED; }
+[data-theme="dark"] .bs-sheet { background:#292A2D !important; color:#E8EAED; }
 
-/* CORRECCIÓN CRÍTICA: Modales y paneles laterales */
+/* Modales y paneles */
 [data-theme="dark"] .modal-surface,
-[data-theme="dark"] [data-modal] { background:#1E293B !important; color:#F1F5F9 !important; }
-/* Inputs dentro de modales en dark mode */
+[data-theme="dark"] [data-modal] { background:#292A2D !important; color:#E8EAED !important; }
 [data-theme="dark"] .modal-surface input:not([type="checkbox"]):not([type="color"]):not([type="radio"]),
 [data-theme="dark"] .modal-surface textarea,
-[data-theme="dark"] .modal-surface select { background:#273549 !important; color:#F1F5F9 !important; border-color:#334155 !important; }
-/* Secciones internas de modales */
-[data-theme="dark"] .modal-surface h3 { color:#F1F5F9 !important; }
-[data-theme="dark"] .modal-surface .fade-up { background:#1E293B !important; }
+[data-theme="dark"] .modal-surface select { background:#35363A !important; color:#E8EAED !important; border-color:#3C4043 !important; }
+[data-theme="dark"] .modal-surface h3 { color:#E8EAED !important; }
+[data-theme="dark"] .modal-surface .fade-up { background:#292A2D !important; }
 
 /* Task rows */
-[data-theme="dark"] .task-row { color:#F1F5F9; border-bottom-color:#334155 !important; }
-[data-theme="dark"] .task-row:hover { background:#273549 !important; }
+[data-theme="dark"] .task-row { color:#E8EAED; background:#292A2D !important; border-color:#3C4043 !important; }
+[data-theme="dark"] .task-row:hover { background:#35363A !important; }
 
 /* Buttons */
-[data-theme="dark"] .btn { background:#273549 !important; color:#94A3B8 !important; border-color:#334155 !important; }
-[data-theme="dark"] .btn:hover { background:#2D3F55 !important; }
-[data-theme="dark"] .btn-primary { background:var(--blue) !important; color:#0F172A !important; border-color:var(--blue) !important; }
+[data-theme="dark"] .btn { background:#35363A !important; color:#9AA0A6 !important; border-color:#3C4043 !important; }
+[data-theme="dark"] .btn:hover { background:#3C4043 !important; }
+[data-theme="dark"] .btn-primary { background:var(--blue) !important; color:#121212 !important; border-color:var(--blue) !important; }
 [data-theme="dark"] .btn-ghost { background:transparent !important; border-color:transparent !important; }
-[data-theme="dark"] .btn-ghost:hover { background:rgba(255,255,255,0.08) !important; }
-[data-theme="dark"] .btn-danger { background:#2D1515 !important; color:#F87171 !important; border-color:#4B2020 !important; }
+[data-theme="dark"] .btn-ghost:hover { background:rgba(255,255,255,0.07) !important; }
+[data-theme="dark"] .btn-danger { background:rgba(242,139,130,0.12) !important; color:#F28B82 !important; border-color:rgba(242,139,130,0.3) !important; }
 
-/* Search bar */
-[data-theme="dark"] .search-wrap { background:#273549 !important; border-color:#334155 !important; }
-[data-theme="dark"] .search-wrap input { color:#F1F5F9 !important; background:transparent !important; }
-[data-theme="dark"] .search-wrap:focus-within { background:#2D3F55 !important; border-color:var(--blue) !important; }
+/* Search */
+[data-theme="dark"] .search-wrap { background:#35363A !important; border-color:#3C4043 !important; }
+[data-theme="dark"] .search-wrap input { color:#E8EAED !important; background:transparent !important; }
+[data-theme="dark"] .search-wrap:focus-within { border-color:var(--blue) !important; box-shadow:0 0 0 2px rgba(29,233,182,0.15) !important; }
 
 /* Bottom nav */
-[data-theme="dark"] .bottom-nav { background:#1E293B !important; border-color:#334155 !important; }
+[data-theme="dark"] .bottom-nav { background:#292A2D !important; border-color:#3C4043 !important; }
 
-/* Chat bubbles */
-[data-theme="dark"] .bubble-me { background:#1e3a2a !important; }
-[data-theme="dark"] .bubble-other { background:#35363a !important; }
+/* Chat */
+[data-theme="dark"] .bubble-me { background:#1C3A2E !important; }
+[data-theme="dark"] .bubble-other { background:#35363A !important; }
 
 /* Context banner */
-[data-theme="dark"] .ctx-banner { background:#2d2700 !important; border-color:#5f4c00 !important; color:#fdd663 !important; }
+[data-theme="dark"] .ctx-banner { background:#2D2A00 !important; border-color:#5F5200 !important; color:#FDD663 !important; }
 
-/* Inputs — dark mode */
+/* Inputs */
 [data-theme="dark"] input:not([type="checkbox"]):not([type="color"]):not([type="radio"]),
 [data-theme="dark"] textarea,
 [data-theme="dark"] select {
-  background:#273549 !important;
-  color:#F1F5F9 !important;
-  border-color:#334155 !important;
+  background:#35363A !important;
+  color:#E8EAED !important;
+  border-color:#3C4043 !important;
 }
 [data-theme="dark"] input::placeholder,
-[data-theme="dark"] textarea::placeholder { color:#5f6368 !important; }
+[data-theme="dark"] textarea::placeholder { color:#5F6368 !important; }
 
-/* Sidebar items */
-[data-theme="dark"] .sb-item { color:#94A3B8 !important; }
-[data-theme="dark"] .app-toolbar { background:var(--gray-light) !important; border-bottom-color:var(--border) !important; }
+/* Sidebar */
+[data-theme="dark"] .sb-item { color:#9AA0A6 !important; }
+[data-theme="dark"] .app-toolbar { background:#292A2D !important; border-bottom-color:#3C4043 !important; }
 [data-theme="dark"] .sb-item:hover { background:rgba(255,255,255,0.06) !important; }
-[data-theme="dark"] .sb-item.active { background:rgba(52,211,153,0.15) !important; color:var(--blue) !important; }
+[data-theme="dark"] .sb-item.active { background:rgba(29,233,182,0.12) !important; color:var(--blue) !important; }
 
 /* Misc */
-[data-theme="dark"] .mention-popup { background:#273549 !important; border-color:#334155 !important; }
-[data-theme="dark"] .inv-code { background:#273549 !important; border-color:#334155 !important; color:#F1F5F9 !important; }
-[data-theme="dark"] .day-chip { background:#273549 !important; border-color:#334155 !important; color:#F1F5F9 !important; }
-[data-theme="dark"] .day-chip.on { background:var(--blue) !important; color:#0F172A !important; border-color:var(--blue) !important; }
-[data-theme="dark"] .team-card { background:#273549 !important; border-color:#334155 !important; }
-[data-theme="dark"] .icon-btn { color:#94A3B8 !important; }
-[data-theme="dark"] .icon-btn:hover { background:rgba(255,255,255,0.08) !important; }
-[data-theme="dark"] .icon-btn.active { background:rgba(52,211,153,0.15) !important; color:var(--blue) !important; }
-[data-theme="dark"] ::-webkit-scrollbar-thumb { background:#334155; }
+[data-theme="dark"] .mention-popup { background:#35363A !important; border-color:#3C4043 !important; }
+[data-theme="dark"] .inv-code { background:#35363A !important; border-color:#3C4043 !important; color:#E8EAED !important; }
+[data-theme="dark"] .day-chip { background:#35363A !important; border-color:#3C4043 !important; color:#E8EAED !important; }
+[data-theme="dark"] .day-chip.on { background:var(--blue) !important; color:#121212 !important; border-color:var(--blue) !important; }
+[data-theme="dark"] .team-card { background:#35363A !important; border-color:#3C4043 !important; }
+[data-theme="dark"] .icon-btn { color:#9AA0A6 !important; }
+[data-theme="dark"] .icon-btn:hover { background:rgba(255,255,255,0.07) !important; }
+[data-theme="dark"] .icon-btn.active { background:rgba(29,233,182,0.12) !important; color:var(--blue) !important; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background:#3C4043; }
 
-/* ══ DARK MODE — Overrides adicionales para blancos hardcodeados ══ */
-/* Lista de tareas y equipo */
+/* Fallbacks para inline styles hardcodeados */
 [data-theme="dark"] .app-main [style*="background:'#fff'"],
 [data-theme="dark"] .app-main [style*='background:"#fff"'],
 [data-theme="dark"] .app-main [style*="background: #fff"],
-[data-theme="dark"] .app-main [style*="background: rgb(255"] { background:var(--md3-surface,#1E293B) !important; }
-
-/* Kanban cards */
+[data-theme="dark"] .app-main [style*="background: rgb(255"] { background:#292A2D !important; }
 [data-theme="dark"] .kanban-board [style*="background:'#fff'"],
 [data-theme="dark"] .kanban-board [style*='background: "#fff"'],
-[data-theme="dark"] .kanban-col { background:rgba(30,41,59,0.85) !important; }
-/* Kanban task cards individual */
+[data-theme="dark"] .kanban-col { background:rgba(41,42,45,0.95) !important; }
 [data-theme="dark"] .kanban-board > div > div > div[style*="background:'#fff'"],
-[data-theme="dark"] .kanban-board > div > div > div[style*="background: #fff"] { background:#273549 !important; }
-
-/* Recurrence popup & reminder popup */
+[data-theme="dark"] .kanban-board > div > div > div[style*="background: #fff"] { background:#35363A !important; }
 [data-theme="dark"] .fade-up[style*="background:'#fff'"],
 [data-theme="dark"] .fade-up[style*="background: #fff"],
 [data-theme="dark"] [style*="background:'#fff'"][style*="zIndex:500"],
-[data-theme="dark"] [style*="background:'#fff'"][style*="zIndex: 500"] {
-  background:#273549 !important; color:#F1F5F9 !important;
-  border-color:#334155 !important;
-}
-
-/* Team view cards */
+[data-theme="dark"] [style*="background:'#fff'"][style*="zIndex: 500"] { background:#35363A !important; color:#E8EAED !important; border-color:#3C4043 !important; }
 [data-theme="dark"] .team-card[style*="background:'#fff'"],
-[data-theme="dark"] .team-card[style*="background: #fff"] { background:#273549 !important; }
-
-/* Sort/filter inline selects and dropdowns */
-[data-theme="dark"] [style*="background:'#fff'"][style*="fontFamily:'var(--font)'"] { background:#273549 !important; }
-
-/* Global fallback: any remaining surface that explicitly sets white background */
+[data-theme="dark"] .team-card[style*="background: #fff"] { background:#35363A !important; }
+[data-theme="dark"] [style*="background:'#fff'"][style*="fontFamily:'var(--font)'"] { background:#35363A !important; }
 [data-theme="dark"] .app-main [style*="background:#fff"],
 [data-theme="dark"] .app-toolbar [style*="background:#fff"],
-[data-theme="dark"] .flt-menu [style*="background:#fff"] {
-  background:#273549 !important;
-  color:#F1F5F9 !important;
-}
-/* Task list scroll area */
+[data-theme="dark"] .flt-menu [style*="background:#fff"] { background:#35363A !important; color:#E8EAED !important; }
 [data-theme="dark"] [style*="overflowY:'auto'"][style*="background:'#fff'"],
-[data-theme="dark"] [style*="overflowY: auto"][style*="background: #fff"] { background:#1E293B !important; }
-
-/* Detail panel */
+[data-theme="dark"] [style*="overflowY: auto"][style*="background: #fff"] { background:#202124 !important; }
 [data-theme="dark"] .panel-inner[style*="background:'#fff'"],
 [data-theme="dark"] .panel-inner [style*="background:'#fff'"],
-[data-theme="dark"] .panel-inner [style*="background:#fff"] { background:#1E293B !important; }
-
-/* Thread panel input row */
-[data-theme="dark"] [style*="background:'#fafafa'"] { background:#273549 !important; }
-[data-theme="dark"] [style*="background:'#f0f2f5'"] { background:#1E293B !important; }
-[data-theme="dark"] [style*="background:'#f8f9fa'"] { background:#273549 !important; }
-
-/* Auth screen */
-[data-theme="dark"] .auth-box { background:#1E293B !important; color:#F1F5F9 !important; box-shadow:0 8px 40px rgba(0,0,0,0.5) !important; }
-[data-theme="dark"] [style*="linear-gradient(135deg,#f8fafc"] { background:#0F172A !important; }
+[data-theme="dark"] .panel-inner [style*="background:#fff"] { background:#292A2D !important; }
+[data-theme="dark"] [style*="background:'#fafafa'"] { background:#35363A !important; }
+[data-theme="dark"] [style*="background:'#f0f2f5'"] { background:#202124 !important; }
+[data-theme="dark"] [style*="background:'#f8f9fa'"] { background:#35363A !important; }
+[data-theme="dark"] .auth-box { background:#292A2D !important; color:#E8EAED !important; }
+[data-theme="dark"] [style*="linear-gradient(135deg,#f8fafc"] { background:#202124 !important; }
 
 /* ══ Animations ══ */
 .fade-up  { animation: fadeUp  0.18s ease-out; }
@@ -292,20 +277,18 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 
 /* ══ Task card rows ══ */
 .task-row {
-  transition: transform 0.18s cubic-bezier(0.22,1,0.36,1), box-shadow 0.18s, background 0.15s;
-  border: 1px solid var(--border) !important;
-  border-radius: 12px !important;
-  margin: 0 16px 8px !important;
-  box-shadow: 0 4px 6px -1px rgb(0 191 165 / 0.05) !important;
-  background: #ffffff !important;
+  transition: background 0.12s;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-bottom: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
 }
 .task-row .task-actions { opacity:0; transition:opacity 0.12s; }
 .task-row:hover .task-actions { opacity:1; }
-.task-row:hover {
-  background: #ffffff !important;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px -4px rgb(0 191 165 / 0.12), 0 4px 8px -2px rgba(0,0,0,0.06) !important;
-}
+.task-row:hover { background: rgba(0,191,165,0.04) !important; }
 
 /* ══ Tooltips ══ */
 .tip { position: relative; display: inline-flex; }
@@ -552,6 +535,31 @@ const { useState, useEffect, useMemo, useRef, useCallback } = React;
 
 /* ══ LOGO ══ */
 const LOGO_SRC = 'data:image/webp;base64,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';
+
+/* ══ SVG ICONS — monochromatic, minimal ══ */
+const IC = {
+  list:    `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="3" y1="4" x2="13" y2="4"/><line x1="3" y1="8" x2="13" y2="8"/><line x1="3" y1="12" x2="13" y2="12"/></svg>`,
+  kanban:  `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="4" height="10" rx="1"/><rect x="6.5" y="3" width="3" height="7" rx="1"/><rect x="10" y="3" width="4" height="5" rx="1"/></svg>`,
+  team:    `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="5" r="2.2"/><path d="M1 13c0-2.8 2.2-4.5 5-4.5s5 1.7 5 4.5"/><circle cx="12" cy="5.5" r="1.8"/><path d="M14.5 13c0-2-1.1-3.2-2.5-3.8"/></svg>`,
+  user:    `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="5.5" r="2.5"/><path d="M2.5 14c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/></svg>`,
+  filter:  `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h12M4 8h8M6 12h4"/></svg>`,
+  plus:    `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="10" y1="4" x2="10" y2="16"/><line x1="4" y1="10" x2="16" y2="10"/></svg>`,
+  close:   `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="2" y1="2" x2="12" y2="12"/><line x1="12" y1="2" x2="2" y2="12"/></svg>`,
+  send:    `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 2.5L2 8l4.5 1.5L8 14l5.5-11.5z"/></svg>`,
+  trash:   `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5h10M6 4.5V3h4v1.5M5 4.5v7.5c0 .6.4 1 1 1h4c.6 0 1-.4 1-1V4.5"/></svg>`,
+  bell:    `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2a4 4 0 0 1 4 4v3l1 2H3l1-2V6a4 4 0 0 1 4-4z"/><path d="M6.5 13a1.5 1.5 0 0 0 3 0"/></svg>`,
+  gear:    `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.1 3.1l1.4 1.4M11.5 11.5l1.4 1.4M3.1 12.9l1.4-1.4M11.5 4.5l1.4-1.4"/></svg>`,
+  check:   `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l3.5 3.5L13 4.5"/></svg>`,
+  eye:     `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg>`,
+  menu:    `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="5" x2="14" y2="5"/><line x1="2" y1="11" x2="14" y2="11"/></svg>`,
+  sun:     `<svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="7.5" cy="7.5" r="2.5"/><line x1="7.5" y1="1" x2="7.5" y2="2.5"/><line x1="7.5" y1="12.5" x2="7.5" y2="14"/><line x1="1" y1="7.5" x2="2.5" y2="7.5"/><line x1="12.5" y1="7.5" x2="14" y2="7.5"/><line x1="3.2" y1="3.2" x2="4.2" y2="4.2"/><line x1="10.8" y1="10.8" x2="11.8" y2="11.8"/><line x1="10.8" y1="4.2" x2="11.8" y2="3.2"/><line x1="3.2" y1="11.8" x2="4.2" y2="10.8"/></svg>`,
+  moon:    `<svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M12 10A6 6 0 0 1 5 3a6 6 0 1 0 7 7z"/></svg>`,
+};
+/* Render SVG inline */
+const Ic = ({name,size=16,style={}}) => React.createElement('span',{
+  dangerouslySetInnerHTML:{__html:IC[name]||''},
+  style:{display:'inline-flex',alignItems:'center',justifyContent:'center',width:size,height:size,flexShrink:0,...style}
+});
 
 /* ══ FIREBASE ══ */
 const db = getDatabase(initializeApp({
@@ -1792,8 +1800,8 @@ function App(){
         ),
         /* CAMBIO 2: toggle de tema movido a Configuración Personal */
         !showTeam&&React.createElement('div',{style:{display:'flex',gap:'4px',flexShrink:0,marginLeft:'auto'}},
-          React.createElement('button',{onClick:()=>setViewMode('list'),className:'btn btn-sm'+(viewMode==='list'?' btn-primary':''),style:{padding:'5px 10px'}},'☰ Lista'),
-          React.createElement('button',{onClick:()=>setViewMode('kanban'),className:'btn btn-sm'+(viewMode==='kanban'?' btn-primary':''),style:{padding:'5px 10px'}},'⊡ Kanban')
+          React.createElement('button',{onClick:()=>setViewMode('list'),className:'btn btn-sm'+(viewMode==='list'?' btn-primary':''),style:{padding:'5px 10px',gap:'4px'}},React.createElement(Ic,{name:'list'}),'Lista'),
+          React.createElement('button',{onClick:()=>setViewMode('kanban'),className:'btn btn-sm'+(viewMode==='kanban'?' btn-primary':''),style:{padding:'5px 10px',gap:'4px'}},React.createElement(Ic,{name:'kanban'}),'Kanban')
         )
       ),
 
@@ -1829,7 +1837,9 @@ function App(){
 
     /* FAB — CAMBIO 3: clase fab-btn para elevar sobre bottom nav en móvil */
     !showTeam&&React.createElement(Tooltip,{tip:'Nueva tarea'},
-      React.createElement('button',{className:'fab-btn',onClick:()=>{const ml=lists.filter(l=>l.createdBy===me?.displayName).sort((a,b)=>(a.order??99)-(b.order??99));setForm({...blank(),listId:selectedList||ml[0]?.id||null});setShowRecPop(false);setShowRemPop(false);setShowModal(true);},style:{position:'fixed',bottom:'26px',right:`${26+(threadTask?334:0)+(detailTask?314:0)}px`,transition:'right 0.22s cubic-bezier(0.22,1,0.36,1)',width:'50px',height:'50px',borderRadius:'var(--radius-lg)',background:'#00BFA5',color:'#fff',border:'none',cursor:'pointer',fontSize:'22px',boxShadow:'0 4px 20px rgba(0,191,165,0.4)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:100}},'+')
+      React.createElement('button',{className:'fab-btn',onClick:()=>{const ml=lists.filter(l=>l.createdBy===me?.displayName).sort((a,b)=>(a.order??99)-(b.order??99));setForm({...blank(),listId:selectedList||ml[0]?.id||null});setShowRecPop(false);setShowRemPop(false);setShowModal(true);},style:{position:'fixed',bottom:'26px',right:`${26+(threadTask?334:0)+(detailTask?314:0)}px`,transition:'right 0.22s cubic-bezier(0.22,1,0.36,1)',width:'50px',height:'50px',borderRadius:'var(--radius-lg)',background:'#00BFA5',color:'#fff',border:'none',cursor:'pointer',boxShadow:'0 2px 12px rgba(0,191,165,0.35)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:100}},
+        React.createElement(Ic,{name:'plus',size:20})
+      )
     ),
 
     /* CAMBIO 3: Sidebar overlay (tap para cerrar en móvil) */
@@ -1838,19 +1848,19 @@ function App(){
     /* CAMBIO 3: Bottom Navigation Bar — visible solo en móvil (<768px) */
     React.createElement('nav',{className:'bottom-nav'},
       React.createElement('button',{className:`bn-item${!showTeam&&viewMode==='list'?' active':''}`,onClick:()=>{setShowTeam(false);setViewMode('list');setMobileSidebarOpen(false);}},
-        React.createElement('span',{className:'bn-icon'},'☰'),React.createElement('span',null,'Lista'),React.createElement('div',{className:'bn-dot'})
+        React.createElement('span',{className:'bn-icon'},React.createElement(Ic,{name:'list',size:20})),React.createElement('span',null,'Lista'),React.createElement('div',{className:'bn-dot'})
       ),
       React.createElement('button',{className:`bn-item${!showTeam&&viewMode==='kanban'?' active':''}`,onClick:()=>{setShowTeam(false);setViewMode('kanban');setMobileSidebarOpen(false);}},
-        React.createElement('span',{className:'bn-icon'},'⊡'),React.createElement('span',null,'Kanban'),React.createElement('div',{className:'bn-dot'})
+        React.createElement('span',{className:'bn-icon'},React.createElement(Ic,{name:'kanban',size:20})),React.createElement('span',null,'Kanban'),React.createElement('div',{className:'bn-dot'})
       ),
       React.createElement('button',{className:`bn-item${showTeam?' active':''}`,onClick:()=>{setShowTeam(true);setMobileSidebarOpen(false);}},
-        React.createElement('span',{className:'bn-icon'},'👥'),React.createElement('span',null,'Equipo'),React.createElement('div',{className:'bn-dot'})
+        React.createElement('span',{className:'bn-icon'},React.createElement(Ic,{name:'team',size:20})),React.createElement('span',null,'Equipo'),React.createElement('div',{className:'bn-dot'})
       ),
       React.createElement('button',{className:'bn-item',onClick:()=>setMobileSidebarOpen(!mobileSidebarOpen)},
-        React.createElement('span',{className:'bn-icon'},'☰'),React.createElement('span',null,'Filtros')
+        React.createElement('span',{className:'bn-icon'},React.createElement(Ic,{name:'filter',size:20})),React.createElement('span',null,'Filtros')
       ),
       React.createElement('button',{className:'bn-item',onClick:()=>setShowSettings(true)},
-        React.createElement('span',{className:'bn-icon'},'👤'),React.createElement('span',null,'Mi cuenta')
+        React.createElement('span',{className:'bn-icon'},React.createElement(Ic,{name:'user',size:20})),React.createElement('span',null,'Mi cuenta')
       )
     ),
 
@@ -1859,7 +1869,7 @@ function App(){
     renderAdmin(),
     confirmDeleteTask&&React.createElement('div',{onClick:()=>setConfirmDeleteTask(null),style:{position:'fixed',inset:0,background:'rgba(15,23,42,0.6)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1500}},
       React.createElement('div',{className:'modal-surface fade-up',onClick:e=>e.stopPropagation(),style:{width:'360px',padding:'24px',background:'#fff',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-xl)'}},
-        React.createElement('div',{style:{width:'40px',height:'40px',borderRadius:'var(--radius-lg)',background:'#fff5f5',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'18px',marginBottom:'14px'}},'🗑️'),
+        React.createElement('div',{style:{width:'40px',height:'40px',borderRadius:'var(--radius-lg)',background:'#fff5f5',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:'14px'}},React.createElement(Ic,{name:'trash',size:18,style:{color:'#EF4444'}})),
         React.createElement('div',{style:{fontSize:'15px',fontWeight:'600',marginBottom:'6px',letterSpacing:'-0.02em'}},'Eliminar tarea'),
         React.createElement('div',{style:{fontSize:'13px',color:'var(--text-secondary)',marginBottom:'20px',lineHeight:1.6}},`¿Eliminar "${confirmDeleteTask.title}"? Esta acción no se puede deshacer.`),
         React.createElement('div',{style:{display:'flex',gap:'8px',justifyContent:'flex-end'}},
@@ -1872,14 +1882,14 @@ function App(){
     /* Settings */
     showSettings&&React.createElement('div',{onClick:e=>e.target===e.currentTarget&&setShowSettings(false),style:{position:'fixed',inset:0,background:'rgba(0,0,0,0.4)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000}},
       React.createElement('div',{className:'modal-surface fade-up',style:{width:'340px',padding:'26px',background:'#fff',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-lg)'}},
-        React.createElement('h3',{style:{margin:'0 0 18px'}},'👤 Mi cuenta'),
+        React.createElement('h3',{style:{margin:'0 0 18px',display:'flex',alignItems:'center',gap:'8px'}},React.createElement(Ic,{name:'user',size:16}),'Mi cuenta'),
         React.createElement('div',{style:{padding:'12px',background:'var(--gray-light)',borderRadius:'var(--radius-md)',marginBottom:'16px'}},
           React.createElement('div',{style:{fontSize:'11px',color:'var(--gray)',marginBottom:'2px'}},'UserID'),React.createElement('div',{style:{fontWeight:'600',fontSize:'13px'}},uid),
           React.createElement('div',{style:{fontSize:'11px',color:'var(--gray)',marginTop:'8px',marginBottom:'2px'}},'Nombre Slack'),React.createElement('div',{style:{fontWeight:'600',fontSize:'13px',color:'var(--blue)'}},me?.displayName),
           isAdmin&&React.createElement('div',{style:{marginTop:'8px',fontSize:'10px',color:'var(--gold)',fontWeight:'700',background:'#fef7e0',padding:'2px 7px',borderRadius:'var(--radius-sm)',display:'inline-block'}},'⚙️ Administrador')
         ),
         React.createElement('div',{style:{marginBottom:'16px'}},
-          React.createElement('div',{style:{fontSize:'11px',fontWeight:'700',color:'var(--gray)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'6px'}},'🔔 Slack Member ID'),
+          React.createElement('div',{style:{fontSize:'11px',fontWeight:'700',color:'var(--gray)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'6px',display:'flex',alignItems:'center',gap:'5px'}},React.createElement(Ic,{name:'bell',size:13}),'Slack Member ID'),
           React.createElement('div',{style:{fontSize:'11px',color:'var(--gray)',marginBottom:'7px',lineHeight:1.5}},'Para recibir DMs de la app. En Slack: click en tu nombre → perfil → ⋯ → "Copy member ID".'),
           React.createElement('input',{value:editMemberId||me?.slackMemberId||'',onChange:e=>setEditMemberId(e.target.value),placeholder:'U0XXXXXXXXX',style:{width:'100%',padding:'9px 11px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',fontSize:'13px',outline:'none',fontFamily:'monospace',letterSpacing:'0.04em'}}),
           React.createElement(Btn,{variant:'primary',size:'sm',onClick:async()=>{const id=(editMemberId||'').trim();await update(ref(db,`${DB_USERS}/${uid}`),{slackMemberId:id});showToast(id?'✅ Member ID guardado':'Member ID eliminado');},style:{marginTop:'8px',width:'100%'}},'Guardar Member ID')
@@ -1887,7 +1897,7 @@ function App(){
         React.createElement(Btn,{variant:'danger',onClick:()=>{localStorage.clear();location.reload();},style:{width:'100%',padding:'10px',marginBottom:'8px'}},'Cerrar sesión'),
         React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'8px',padding:'10px',background:'var(--gray-light)',borderRadius:'var(--radius-md)'}},
           React.createElement('div',null,
-            React.createElement('div',{style:{fontSize:'13px',fontWeight:'600'}},darkMode?'🌙 Modo oscuro':'☀️ Modo claro'),
+            React.createElement('div',{style:{fontSize:'13px',fontWeight:'600',display:'flex',alignItems:'center',gap:'6px'}},React.createElement(Ic,{name:darkMode?'moon':'sun',size:14}),darkMode?'Modo oscuro':'Modo claro'),
             React.createElement('div',{style:{fontSize:'11px',color:'var(--text-secondary)'}},'Cambia el tema de la app')
           ),
           React.createElement('button',{onClick:toggleDark,style:{width:'46px',height:'26px',borderRadius:'13px',border:'none',cursor:'pointer',background:darkMode?'var(--blue)':'var(--border)',position:'relative',transition:'background 0.2s',flexShrink:0}},

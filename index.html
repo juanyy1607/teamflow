@@ -1296,7 +1296,7 @@ function App(){
             React.createElement('button',{className:'btn btn-pill btn-sm',onClick:()=>setModalOpen(p=>({...p,startDate:!p.startDate})),style:{color:form.startDate?'var(--purple)':'var(--text-secondary)',background:form.startDate?'#f3e8ff':'var(--gray-light)',borderColor:form.startDate?'var(--purple)':'var(--border)',display:'flex',alignItems:'center',gap:'5px',fontSize:'12px'}},
               React.createElement(Ic,{name:'cal',size:13}),form.startDate?`Inicio: ${form.startDate.slice(5).replace('-','/')}`:'Inicio'),
             React.createElement('button',{className:'btn btn-pill btn-sm',onClick:()=>setModalOpen(p=>({...p,links:!p.links})),style:{color:(form.links||[]).length>0?'var(--blue)':'var(--text-secondary)',background:(form.links||[]).length>0?'var(--blue-light)':'var(--gray-light)',borderColor:(form.links||[]).length>0?'var(--blue)':'var(--border)',display:'flex',alignItems:'center',gap:'5px',fontSize:'12px'}},
-              React.createElement(Ic,{name:'link',size:13}),'Links'+((form.links||[]).length>0?` (${(form.links||[]).length})`:'')],
+              React.createElement(Ic,{name:'link',size:13}),'Links'+((form.links||[]).length>0?` (${(form.links||[]).length})`:'')),
             React.createElement('button',{className:'btn btn-pill btn-sm',onClick:()=>setModalOpen(p=>({...p,adv:!p.adv})),style:{color:modalOpen.adv?'var(--text-primary)':'var(--text-secondary)',background:modalOpen.adv?'var(--border)':'var(--gray-light)',borderColor:'var(--border)',display:'flex',alignItems:'center',gap:'5px',fontSize:'12px'}},
               React.createElement(Ic,{name:'dots',size:13}),'Más')
           ),

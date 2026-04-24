@@ -306,7 +306,7 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 /* ══ Day chips ══ */
 .day-chip {
   width: 30px; height: 30px; border-radius: 50%;
-  border: 1px solid var(--border); background: #fff;
+  border: 1px solid var(--border); background: var(--gray-light);
   cursor: pointer; font-size: 12px; font-weight: 600;
   display: flex; align-items: center; justify-content: center;
   transition: all 0.1s; user-select: none;
@@ -318,7 +318,7 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   padding: 7px 14px; border-radius: var(--radius-md); border: 1px solid var(--border);
-  background: #fff; color: var(--text-secondary);
+  background: var(--gray-light); color: var(--text-secondary);
   font-size: 13px; font-weight: 500; font-family: var(--font);
   cursor: pointer; transition: all 0.15s; line-height: 1;
   white-space: nowrap; letter-spacing: -0.01em;
@@ -390,7 +390,7 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 
 /* ══ Chat bubbles ══ */
 .bubble-me    { background: #dcf8c6; border-radius: 16px 16px 4px 16px; }
-.bubble-other { background: #fff;    border-radius: 16px 16px 16px 4px; }
+.bubble-other { background: var(--gray-light); border-radius: 16px 16px 16px 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
 
 /* ══ Misc ══ */
 input[type="checkbox"] { cursor: pointer; accent-color: #00BFA5; }
@@ -431,7 +431,7 @@ input:focus, textarea:focus, select:focus {
   position: fixed;
   bottom: 0; left: 0; right: 0;
   height: 64px;
-  background: #fff;
+  background: var(--gray-light);
   border-top: 1px solid var(--border);
   z-index: 200;
   flex-direction: row;
@@ -621,7 +621,7 @@ const smartDate = (ts, noExpiry) => {
   const now=Date.now(), diff=ts-now, d=new Date(ts);
   const time=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
   if (diff<0) { const ago=Math.abs(diff); if(ago<3600000)return`Venció hace ${Math.floor(ago/60000)}m`; if(ago<86400000)return`Venció hace ${Math.floor(ago/3600000)}h`; return`Venció ${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')} ${time}`; }
-  if (diff<3600000){const h=Math.floor(diff/3600000),m=Math.floor((diff%3600000)/60000);return`${h}h ${m}m`;}
+  if (diff<3600000){const m=Math.floor(diff/60000);return m<1?'<1m':`${m}m`;}
   const tom=new Date();tom.setDate(tom.getDate()+1);
   if(d.toDateString()===new Date().toDateString())return`Hoy ${time}`;
   if(d.toDateString()===tom.toDateString())return`Mañana ${time}`;
@@ -778,14 +778,14 @@ function ThreadPanel({task,myName,comments,onAddComment,onClose}){
       ),
       React.createElement('button',{onClick:onClose,className:'icon-btn',style:{width:28,height:28}},React.createElement(Ic,{name:'close',size:14}))
     ),
-    React.createElement('div',{style:{padding:'8px 13px',borderBottom:'1px solid var(--border)',background:'#fafafa',flexShrink:0}},
+    React.createElement('div',{style:{padding:'8px 13px',borderBottom:'1px solid var(--border)',background:'var(--gray-mid)',flexShrink:0}},
       React.createElement('div',{style:{display:'flex',gap:'6px',flexWrap:'wrap',alignItems:'center',marginBottom:'3px'}},
         React.createElement('span',{style:{background:PRIORITY[task.priority]?.bg,color:PRIORITY[task.priority]?.color,fontWeight:'bold',fontSize:'10px',padding:'2px 6px',borderRadius:'var(--radius-pill)'}},PRIORITY[task.priority]?.label),
         React.createElement('span',{style:{fontSize:'11px',color:'var(--gray)'}},`${task.addedBy===myName?'Yo':task.addedBy} ➔ ${task.assignedTo===myName?'Yo':task.assignedTo}`)
       ),
       !task.noExpiry&&task.dueTimestamp&&React.createElement('div',{style:{fontSize:'11px',color:'var(--gray)'}},`⏰ ${smartDate(task.dueTimestamp,false)}`)
     ),
-    React.createElement('div',{style:{flex:1,overflowY:'auto',padding:'12px 12px 4px',background:'#f0f2f5',display:'flex',flexDirection:'column',gap:'8px'}},
+    React.createElement('div',{style:{flex:1,overflowY:'auto',padding:'12px 12px 4px',background:'var(--gray-mid)',display:'flex',flexDirection:'column',gap:'8px'}},
       comments.length===0&&React.createElement('div',{style:{textAlign:'center',color:'var(--gray)',fontSize:'12px',margin:'auto',fontStyle:'italic'}},'Sin comentarios.\nUsá @nombre para mencionar.'),
       comments.map((c,i)=>{const isMe=c.author===myName;return React.createElement('div',{key:i,style:{display:'flex',flexDirection:'column',alignItems:isMe?'flex-end':'flex-start'}},React.createElement('div',{className:isMe?'bubble-me':'bubble-other',style:{padding:'8px 11px',maxWidth:'88%',boxShadow:'0 1px 2px rgba(0,0,0,0.06)'}},React.createElement('div',{style:{fontSize:'10px',color:isMe?'#5a8a5a':'var(--blue)',fontWeight:'700',marginBottom:'3px'}},isMe?'Yo':c.author),React.createElement('div',{style:{fontSize:'13px',lineHeight:1.45}},renderText(c.text)),React.createElement('div',{style:{fontSize:'10px',color:'var(--gray)',marginTop:'3px',textAlign:'right'}},fmtTs(c.ts))));}),
       React.createElement('div',{ref:endRef})
@@ -986,18 +986,18 @@ function App(){
     if(authLoading)return;
     setAuthErr('');setAuthLoading(true);
     try {
-    if(!authForm.id.trim()||!authForm.pass.trim())return setAuthErr('Completá usuario y contraseña.');
-    if(authMode==='register'&&!authForm.slackName.trim())return setAuthErr('Ingresá tu nombre de Slack.');
+    if(!authForm.id.trim()||!authForm.pass.trim()){setAuthLoading(false);return setAuthErr('Completá usuario y contraseña.');}
+    if(authMode==='register'&&!authForm.slackName.trim()){setAuthLoading(false);return setAuthErr('Ingresá tu nombre de Slack.');}
     const uRef=ref(db,`${DB_USERS}/${authForm.id.trim()}`);const snap=await get(uRef);
     if(authMode==='register'){
       const cfgSnap=await get(ref(db,`${DB_CONFIG}/adminUid`));const adminExists=cfgSnap.exists();
-      if(adminExists){if(!authForm.inviteCode.trim())return setAuthErr('Se requiere código de invitación.');const invSnap=await get(ref(db,`${DB_INVITES}/${authForm.inviteCode.toUpperCase()}`));if(!invSnap.exists())return setAuthErr('Código inválido.');if(invSnap.val().usedBy)return setAuthErr('Código ya utilizado.');await update(ref(db,`${DB_INVITES}/${authForm.inviteCode.toUpperCase()}`),{usedBy:authForm.id.trim(),usedAt:Date.now()});}
-      if(snap.exists())return setAuthErr('Ese UserID ya existe.');const isFirst=!adminExists;
+      if(adminExists){if(!authForm.inviteCode.trim()){setAuthLoading(false);return setAuthErr('Se requiere código de invitación.');}const invSnap=await get(ref(db,`${DB_INVITES}/${authForm.inviteCode.toUpperCase()}`));if(!invSnap.exists()){setAuthLoading(false);return setAuthErr('Código inválido.');}if(invSnap.val().usedBy){setAuthLoading(false);return setAuthErr('Código ya utilizado.');}await update(ref(db,`${DB_INVITES}/${authForm.inviteCode.toUpperCase()}`),{usedBy:authForm.id.trim(),usedAt:Date.now()});}
+      if(snap.exists()){setAuthLoading(false);return setAuthErr('Ese UserID ya existe.');}const isFirst=!adminExists;
       await set(uRef,{displayName:authForm.slackName.trim(),pass:authForm.pass,isAdmin:isFirst,createdAt:Date.now()});
       if(isFirst)await set(ref(db,`${DB_CONFIG}/adminUid`),authForm.id.trim());
       showToast(isFirst?'¡Bienvenido, Administrador!':'Cuenta creada. Iniciá sesión.');setAuthMode('login');setAuthForm(f=>({...f,pass:'',inviteCode:''}));
     } else {
-      if(!snap.exists()||snap.val().pass!==authForm.pass)return setAuthErr('Credenciales incorrectas.');
+      if(!snap.exists()||snap.val().pass!==authForm.pass){setAuthLoading(false);return setAuthErr('Credenciales incorrectas.');}
       localStorage.setItem('tf7_uid',authForm.id.trim());setUid(authForm.id.trim());setSelUser(snap.val().displayName);
     }
     }catch(e){setAuthErr('Error de conexión. Intentá de nuevo.');} finally{setAuthLoading(false);}
@@ -1062,7 +1062,7 @@ function App(){
   const handleSaveTask=async()=>{
     if(!form.title.trim())return showToast('El título es obligatorio','err');
     let dueTs=null;
-    if(!form.noExpiry){const dt=new Date(`${form.dueDate}T${form.dueHour.toString().padStart(2,'0')}:${(form.dueMinute||'00').toString().padStart(2,'0')}:00`);dueTs=dt.getTime();const isRec=form.recurrence&&form.recurrence.type!=='none';if(!isRec&&dueTs<=Date.now())return showToast('Fecha en el pasado','err');}
+    if(!form.noExpiry){const dt=new Date(`${form.dueDate}T${form.dueHour.toString().padStart(2,'0')}:${(form.dueMinute||'00').toString().padStart(2,'0')}:00`);dueTs=dt.getTime();const isRec=form.recurrence&&form.recurrence.type!=='none';if(!isRec&&!form.id&&dueTs<=Date.now())return showToast('La fecha de vencimiento no puede estar en el pasado','err');}
     const isEdit=!!form.id;const tRef=form.id?ref(db,`${DB_TASKS}/${form.id}`):push(ref(db,DB_TASKS));
     const ft={...form,id:form.id||tRef.key,addedBy:isEdit?form.addedBy:me?.displayName,status:form.status||'wip',createdAt:form.createdAt||Date.now(),dueTimestamp:dueTs,subtasks:form.subtasks||[],statusLog:form.statusLog||[],tags:form.tags||[],links:form.links||[]};
     await set(tRef,ft);
@@ -1076,12 +1076,16 @@ function App(){
   /* Reassignment */
   const canReassign=(t)=>{const myName=me?.displayName;if(t.status==='completed')return false;if(t.assignedTo===myName)return'own';if(!t.noExpiry){const diff=t.dueTimestamp-Date.now();if(diff>0&&diff<=1800000)return'take';}return false;};
   const handleReassign=async()=>{
-  if(!reassignTask||!reassignTarget)return;
+  if(!reassignTask)return;
+  const myName=me?.displayName;
+  const mode=canReassign(reassignTask);
+  const target=mode==='take'?myName:reassignTarget;
+  if(!target)return;
   const old=reassignTask.assignedTo;
-  const log=[...(reassignTask.statusLog||[]),{type:'reassign',from:old,to:reassignTarget,changedBy:me?.displayName,timestamp:Date.now()}];
-  await update(ref(db,`${DB_TASKS}/${reassignTask.id}`),{assignedTo:reassignTarget,statusLog:log});
-  _notifyCreator(SLACK_TOKEN,userMap,reassignTask,me?.displayName,'reassign',{from:old,to:reassignTarget});
-  setReassignTask(null);setReassignTarget('');showToast(`✅ Reasignada a ${reassignTarget}`);
+  const log=[...(reassignTask.statusLog||[]),{type:'reassign',from:old,to:target,changedBy:myName,timestamp:Date.now()}];
+  await update(ref(db,`${DB_TASKS}/${reassignTask.id}`),{assignedTo:target,statusLog:log});
+  _notifyCreator(SLACK_TOKEN,userMap,reassignTask,myName,'reassign',{from:old,to:target});
+  setReassignTask(null);setReassignTarget('');showToast(`✅ Reasignada a ${target}`);
 };
 
   /* Tag management */
@@ -1146,7 +1150,7 @@ function App(){
     const reassignMode=canReassign(t);
     const taskTags=(t.tags||[]).map(id=>globalTags.find(tg=>tg.id===id)).filter(Boolean);
 
-    return React.createElement('div',{key:t.id,className:'task-row',style:{display:'flex',alignItems:'flex-start',padding:'12px 16px',background:hasThread?'rgba(0,191,165,0.06)':expired?'rgba(239,68,68,0.03)':urgentHour?'rgba(245,158,11,0.04)':'#fff',cursor:'pointer',gap:'10px'},onClick:()=>{setDetailId(detailId===t.id?null:t.id);setDetailTab('info');}},
+    return React.createElement('div',{key:t.id,className:'task-row',style:{display:'flex',alignItems:'flex-start',padding:'12px 16px',background:hasThread?'rgba(0,191,165,0.06)':expired?'rgba(239,68,68,0.03)':urgentHour?'rgba(245,158,11,0.04)':'transparent',cursor:'pointer',gap:'10px'},onClick:()=>{setDetailId(detailId===t.id?null:t.id);setDetailTab('info');}},
       React.createElement('div',{style:{paddingTop:'2px',flexShrink:0},onClick:e=>e.stopPropagation()},
         (isOwner||isAssigned)&&React.createElement('input',{type:'checkbox',checked:done,onChange:e=>handleComplete(t,e.target.checked)})
       ),
@@ -1207,8 +1211,7 @@ function App(){
     const stDone=(detailTask.subtasks||[]).filter(x=>x.done).length,stTot=(detailTask.subtasks||[]).length;
     const log=(detailTask.statusLog||[]).slice().reverse();
     const taskTags=(detailTask.tags||[]).map(id=>globalTags.find(tg=>tg.id===id)).filter(Boolean);
-    return React.createElement('div',{className:'panel-wrapper',style:{width:'300px',borderLeft:'1px solid var(--border)'}},
-      React.createElement('div',{className:'panel-inner',style:{width:'300px',background:'var(--gray-light)'}},
+    return React.createElement('div',{className:'panel-inner',style:{width:'300px',background:'var(--gray-light)'}},
         React.createElement('div',{style:{padding:'12px 13px 9px',borderBottom:'1px solid var(--border)',display:'flex',justifyContent:'space-between',alignItems:'flex-start',flexShrink:0}},
           React.createElement('div',{style:{flex:1,marginRight:'8px'}},
             React.createElement('div',{style:{fontSize:'13px',fontWeight:'600',lineHeight:1.4,marginBottom:'5px'}},detailTask.title),
@@ -1243,7 +1246,6 @@ function App(){
             log.map((e,i)=>{const isR=e.type==='reassign';return React.createElement('div',{key:i,style:{display:'flex',gap:'8px',marginBottom:'10px',alignItems:'flex-start'}},React.createElement('div',{style:{width:'7px',height:'7px',borderRadius:'50%',background:isR?'var(--orange)':STATUS[e.to]?.color||'var(--gray)',marginTop:'4px',flexShrink:0}}),React.createElement('div',null,React.createElement('div',{style:{fontSize:'12px',lineHeight:1.5}},React.createElement('b',null,e.changedBy===myName?'Yo':e.changedBy),isR?' reasignó: ':' → ',isR?React.createElement('span',null,`@${e.from} → @${e.to}`):React.createElement('b',{style:{color:STATUS[e.to]?.color||'var(--gray)'}},STATUS[e.to]?.label||e.to)),React.createElement('div',{style:{fontSize:'10px',color:'var(--gray)'}},fmtTs(e.timestamp))));})
           )
         )
-      )
     );
   };
 
@@ -1389,7 +1391,7 @@ function App(){
           ),
           React.createElement('div',{style:{height:'4px'}})
         ),
-        React.createElement('div',{style:{padding:'14px 22px',borderTop:'1px solid var(--border)',display:'flex',justifyContent:'flex-end',gap:'10px',flexShrink:0,background:'#FAFCFE'}},
+        React.createElement('div',{style:{padding:'14px 22px',borderTop:'1px solid var(--border)',display:'flex',justifyContent:'flex-end',gap:'10px',flexShrink:0,background:'var(--gray-light)'}},
           React.createElement(Btn,{onClick:()=>{setShowModal(false);setModalOpen({links:false,subtasks:false,deps:false,startDate:false,dueDate:false,adv:false});},style:{color:'var(--text-secondary)'}},'Cancelar'),
           React.createElement(Btn,{variant:'primary',onClick:handleSaveTask,style:{minWidth:'110px',fontWeight:'600',letterSpacing:'-0.01em'}},'Guardar tarea')
         )
@@ -1416,7 +1418,7 @@ function App(){
         ),
         React.createElement('div',{style:{display:'flex',gap:'8px',justifyContent:'flex-end'}},
           React.createElement(Btn,{onClick:()=>setReassignTask(null)},'Cancelar'),
-          React.createElement(Btn,{variant:'primary',onClick:handleReassign,style:{background:mode==='take'?'var(--orange)':'var(--blue)',borderColor:mode==='take'?'var(--orange)':'var(--blue)'}},mode==='take'?'Tomar tarea':'Reasignar')
+          React.createElement(Btn,{variant:'primary',disabled:mode==='own'&&!reassignTarget,onClick:handleReassign,style:{background:mode==='take'?'var(--orange)':'var(--blue)',borderColor:mode==='take'?'var(--orange)':'var(--blue)'}},mode==='take'?'Tomar tarea':'Reasignar')
         )
       )
     );
@@ -1642,6 +1644,7 @@ function App(){
     const invU=Object.entries(invites).filter(([,v])=>!v.usedBy);
     const invD=Object.entries(invites).filter(([,v])=>v.usedBy);
     const SL=(icon,label,ch)=>React.createElement('div',{style:{marginBottom:'20px'}},React.createElement('div',{style:{fontSize:'11px',fontWeight:'700',color:'var(--gray)',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'8px',paddingBottom:'5px',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',gap:'6px'}},React.createElement(Ic,{name:icon,size:13}),label),ch);
+    const S=(label,ch)=>React.createElement('div',{style:{marginBottom:'20px'}},React.createElement('div',{style:{fontSize:'11px',fontWeight:'700',color:'var(--gray)',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'8px',paddingBottom:'5px',borderBottom:'1px solid var(--border)'}},label),ch);
     const saveAdm=async()=>{await update(ref(db,DB_CONFIG),{reportSchedule:{morningEnabled:adm.morningOn,morningTime:adm.morningT,afternoonEnabled:adm.afternoonOn,afternoonTime:adm.afternoonT}});showToast('✅ Configuración guardada');};
     const sendNow=async(type)=>{
       const n=Date.now(),tod=new Date();tod.setHours(0,0,0,0);const todTs=tod.getTime();
@@ -1663,7 +1666,7 @@ function App(){
             React.createElement('div',{style:{fontSize:'11px',color:'var(--gray)',marginBottom:'6px'}},'Vigentes, vencidas y completadas por usuario.'),
             adm.morningOn&&React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'8px',flexWrap:'wrap'}},React.createElement('span',{style:{fontSize:'12px',color:'var(--gray)'}},'Horario:'),React.createElement('input',{type:'time',value:adm.morningT,onChange:e=>setAdm({...adm,morningT:e.target.value}),style:{padding:'5px 8px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',fontSize:'13px',fontFamily:'var(--font)'}}),React.createElement(Btn,{size:'sm',onClick:()=>sendNow('morning'),style:{fontSize:'11px',padding:'4px 10px',color:'var(--blue)',borderColor:'var(--blue)',marginLeft:'auto'}},'▶ Enviar ahora'))
           ),
-          React.createElement('div',{style:{padding:'11px',background:'#fef7e0',borderRadius:'var(--radius-md)',border:'1px solid rgba(249,171,0,0.3)'}},
+          React.createElement('div',{style:{padding:'11px',background:'rgba(249,171,0,0.12)',borderRadius:'var(--radius-md)',border:'1px solid rgba(249,171,0,0.3)'}},
             React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'6px'}},React.createElement('span',{style:{fontWeight:'600',fontSize:'13px',color:'var(--gold)'}},'🌆 Vespertino'),React.createElement('label',{style:{display:'flex',alignItems:'center',gap:'6px',cursor:'pointer',fontSize:'12px',color:'var(--gray)'}},React.createElement('input',{type:'checkbox',checked:adm.afternoonOn,onChange:e=>setAdm({...adm,afternoonOn:e.target.checked})}),adm.afternoonOn?'Activo':'Inactivo')),
             React.createElement('div',{style:{fontSize:'11px',color:'var(--gray)',marginBottom:'6px'}},'Completadas hoy, vencidas hoy, pendientes totales.'),
             adm.afternoonOn&&React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'8px',flexWrap:'wrap'}},React.createElement('span',{style:{fontSize:'12px',color:'var(--gray)'}},'Horario:'),React.createElement('input',{type:'time',value:adm.afternoonT,onChange:e=>setAdm({...adm,afternoonT:e.target.value}),style:{padding:'5px 8px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',fontSize:'13px',fontFamily:'var(--font)'}}),React.createElement(Btn,{size:'sm',onClick:()=>sendNow('afternoon'),style:{fontSize:'11px',padding:'4px 10px',color:'var(--gold)',borderColor:'var(--gold)',marginLeft:'auto'}},'▶ Enviar ahora'))
@@ -1752,7 +1755,7 @@ function App(){
       React.createElement('div',{className:'auth-box fade-up',style:{width:'360px',background:'#fff',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-lg)',overflow:'hidden'}},
         React.createElement('div',{style:{background:'var(--brand-bg)',padding:'28px',textAlign:'center'}},
           React.createElement('img',{src:LOGO_SRC,alt:'Onbordea',style:{height:'36px',marginBottom:'12px'}}),
-          React.createElement('div',{style:{fontSize:'20px',fontWeight:'600',color:'#fff'}})
+          React.createElement('div',{style:{fontSize:'15px',fontWeight:'400',color:'rgba(255,255,255,0.7)'}},'Gestión de tareas')
         ),
         React.createElement('div',{style:{padding:'28px'}},
           authErr&&React.createElement('div',{style:{background:'#FEE2E2',color:'#EF4444',padding:'9px 12px',borderRadius:'var(--radius-md)',fontSize:'12px',marginBottom:'12px'}},authErr),
@@ -1796,9 +1799,9 @@ function App(){
           showTeam?React.createElement('span',{style:{display:'flex',alignItems:'center',gap:'6px'}},React.createElement(Ic,{name:'team',size:14}),'Vista de Equipo'):selUser===me?.displayName?'Mis Tareas':`Tareas de ${selUser}`
         ),
         /* Search bar */
-        React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'0',flexShrink:0}},
-          React.createElement('input',{placeholder:'Buscar',value:searchQ,onChange:e=>setSearchQ(e.target.value),onKeyDown:e=>e.key==='Escape'&&setSearchQ(''),style:{padding:'6px 14px',border:'1px solid var(--border)',borderRight:'none',borderRadius:'var(--radius-pill) 0 0 var(--radius-pill)',fontSize:'13px',outline:'none',background:'var(--gray-light)',color:'var(--text-primary)',fontFamily:'var(--font)',width:'180px',transition:'border-color 0.15s',}}),
-          React.createElement('button',{style:{padding:'6px 11px',background:'#00BFA5',border:'1px solid #00BFA5',borderRadius:'0 var(--radius-pill) var(--radius-pill) 0',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',flexShrink:0},onClick:()=>{}},React.createElement(Ic,{name:'search',size:15}))
+        React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'0',flexShrink:0,flex:'0 1 200px',minWidth:'120px'}},
+          React.createElement('input',{placeholder:'Buscar',value:searchQ,onChange:e=>setSearchQ(e.target.value),onKeyDown:e=>e.key==='Escape'&&setSearchQ(''),style:{padding:'6px 14px',border:'1px solid var(--border)',borderRight:'none',borderRadius:'var(--radius-pill) 0 0 var(--radius-pill)',fontSize:'13px',outline:'none',background:'var(--gray-light)',color:'var(--text-primary)',fontFamily:'var(--font)',width:'100%',transition:'border-color 0.15s'}}),
+          React.createElement('button',{style:{padding:'6px 8px',background:'#00BFA5',border:'1px solid #00BFA5',borderRadius:'0 var(--radius-pill) var(--radius-pill) 0',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',flexShrink:0},onClick:()=>setSearchQ(''),title:searchQ?'Limpiar búsqueda':'Buscar'},React.createElement(Ic,{name:'search',size:14}))
         ),
         /* Sort */
         React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'4px',fontSize:'12px',color:'var(--gray)'}},
@@ -1855,7 +1858,7 @@ function App(){
 
     /* FAB — CAMBIO 3: clase fab-btn para elevar sobre bottom nav en móvil */
     !showTeam&&React.createElement(Tooltip,{tip:'Nueva tarea'},
-      React.createElement('button',{className:'fab-btn',onClick:()=>{const ml=lists.filter(l=>l.createdBy===me?.displayName).sort((a,b)=>(a.order??99)-(b.order??99));setForm({...blank(),listId:selectedList||ml[0]?.id||null});setShowRecPop(false);setShowRemPop(false);setShowModal(true);},style:{position:'fixed',bottom:'26px',right:`${26+(threadTask?334:0)+(detailTask?314:0)}px`,transition:'right 0.22s cubic-bezier(0.22,1,0.36,1)',width:'50px',height:'50px',borderRadius:'var(--radius-lg)',background:'#00BFA5',color:'#fff',border:'none',cursor:'pointer',boxShadow:'0 2px 12px rgba(0,191,165,0.35)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:100}},
+      React.createElement('button',{className:'fab-btn',onClick:()=>{const ml=lists.filter(l=>l.createdBy===me?.displayName).sort((a,b)=>(a.order??99)-(b.order??99));setForm({...blank(),listId:selectedList||ml[0]?.id||null});setShowRecPop(false);setShowRemPop(false);setShowModal(true);},style:{position:'fixed',bottom:'26px',right:`${26+(threadTask?324:0)+(detailTask?304:0)}px`,transition:'right 0.22s cubic-bezier(0.22,1,0.36,1)',width:'50px',height:'50px',borderRadius:'var(--radius-lg)',background:'#00BFA5',color:'#fff',border:'none',cursor:'pointer',boxShadow:'0 2px 12px rgba(0,191,165,0.35)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:100}},
         React.createElement(Ic,{name:'plus',size:20})
       )
     ),
@@ -1887,7 +1890,7 @@ function App(){
     renderAdmin(),
     confirmDeleteTask&&React.createElement('div',{onClick:()=>setConfirmDeleteTask(null),style:{position:'fixed',inset:0,background:'rgba(15,23,42,0.6)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1500}},
       React.createElement('div',{className:'modal-surface fade-up',onClick:e=>e.stopPropagation(),style:{width:'360px',padding:'24px',background:'#fff',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-xl)'}},
-        React.createElement('div',{style:{width:'40px',height:'40px',borderRadius:'var(--radius-lg)',background:'#fff5f5',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:'14px'}},React.createElement(Ic,{name:'trash',size:18,style:{color:'#EF4444'}})),
+        React.createElement('div',{style:{width:'40px',height:'40px',borderRadius:'var(--radius-lg)',background:'rgba(239,68,68,0.1)',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:'14px'}},React.createElement(Ic,{name:'trash',size:18,style:{color:'#EF4444'}})),
         React.createElement('div',{style:{fontSize:'15px',fontWeight:'600',marginBottom:'6px',letterSpacing:'-0.02em'}},'Eliminar tarea'),
         React.createElement('div',{style:{fontSize:'13px',color:'var(--text-secondary)',marginBottom:'20px',lineHeight:1.6}},`¿Eliminar "${confirmDeleteTask.title}"? Esta acción no se puede deshacer.`),
         React.createElement('div',{style:{display:'flex',gap:'8px',justifyContent:'flex-end'}},
@@ -1904,7 +1907,7 @@ function App(){
         React.createElement('div',{style:{padding:'12px',background:'var(--gray-light)',borderRadius:'var(--radius-md)',marginBottom:'16px'}},
           React.createElement('div',{style:{fontSize:'11px',color:'var(--gray)',marginBottom:'2px'}},'UserID'),React.createElement('div',{style:{fontWeight:'600',fontSize:'13px'}},uid),
           React.createElement('div',{style:{fontSize:'11px',color:'var(--gray)',marginTop:'8px',marginBottom:'2px'}},'Nombre Slack'),React.createElement('div',{style:{fontWeight:'600',fontSize:'13px',color:'var(--blue)'}},me?.displayName),
-          isAdmin&&React.createElement('div',{style:{marginTop:'8px',fontSize:'10px',color:'var(--gold)',fontWeight:'700',background:'#fef7e0',padding:'2px 7px',borderRadius:'var(--radius-sm)',display:'inline-block'}},'⚙️ Administrador')
+          isAdmin&&React.createElement('div',{style:{marginTop:'8px',fontSize:'10px',color:'var(--gold)',fontWeight:'700',background:'rgba(249,171,0,0.12)',padding:'2px 7px',borderRadius:'var(--radius-sm)',display:'inline-block'}},'⚙️ Administrador')
         ),
         React.createElement('div',{style:{marginBottom:'16px'}},
           React.createElement('div',{style:{fontSize:'11px',fontWeight:'700',color:'var(--gray)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'6px',display:'flex',alignItems:'center',gap:'5px'}},React.createElement(Ic,{name:'bell',size:13}),'Slack Member ID'),

@@ -537,6 +537,22 @@ input:focus, textarea:focus, select:focus {
 
   /* Auth screen */
   .auth-box { width: 92vw !important; padding: 24px 18px !important; }
+
+  /* Admin Panel: centered popup on mobile (like task modal) */
+  .admin-modal-container {
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .admin-modal-panel {
+    width: 92vw !important;
+    height: auto !important;
+    max-height: 85vh !important;
+    border-radius: var(--radius-xl) !important;
+    box-shadow: var(--shadow-xl) !important;
+  }
+
+  /* Hide Admin Panel button in mobile sidebar (it lives inside Cuenta/Settings) */
+  .sb-admin-btn { display: none !important; }
 }
 </style>
 
@@ -901,6 +917,8 @@ function App(){
   const [listDragOver,setListDragOver]=useState(null);
   /* CAMBIO 3: estado para sidebar móvil tipo drawer */
   const [mobileSidebarOpen,setMobileSidebarOpen]=useState(false);
+  const [isMobile,setIsMobile]=useState(()=>window.matchMedia('(max-width:768px)').matches);
+  useEffect(()=>{const mql=window.matchMedia('(max-width:768px)');const fn=e=>setIsMobile(e.matches);mql.addEventListener('change',fn);return()=>mql.removeEventListener('change',fn);},[]);
   const [listPopName,setListPopName]=useState('');
   const [listPopColor,setListPopColor]=useState('#00BFA5');
   const [listPopVis,setListPopVis]=useState('private');
@@ -1546,7 +1564,7 @@ function App(){
         sidebar
           ? React.createElement(React.Fragment,null,
               React.createElement('img',{src:LOGO_SRC,alt:'Onbordea',className:'sb-brand-logo'}),
-              React.createElement(Tooltip,{tip:'Colapsar'},React.createElement('button',{className:'icon-btn',onClick:()=>setSidebar(false),style:{width:26,height:26,fontSize:13,color:'rgba(255,255,255,0.6)'}},'◀'))
+              React.createElement(Tooltip,{tip:'Colapsar'},React.createElement('button',{className:'icon-btn',onClick:()=>{if(isMobile)setMobileSidebarOpen(false);else setSidebar(false);},style:{width:26,height:26,fontSize:13,color:'rgba(255,255,255,0.6)'}},'◀'))
             )
           : React.createElement(Tooltip,{tip:'Expandir'},React.createElement('button',{className:'icon-btn',onClick:()=>setSidebar(true),style:{width:30,height:30,fontSize:13,color:'rgba(255,255,255,0.7)'}},'▶'))
       ),
@@ -1617,9 +1635,9 @@ function App(){
         React.createElement(SBHead,{label:'EQUIPO',k:'team'}),
         sbSecs.team&&allUsers.map(u=>React.createElement('div',{key:u,className:`sb-item${selUser===u&&!showTeam?' active':''}`,onClick:()=>{setSelUser(u);setShowTeam(false);},style:{padding:sidebar?'6px 14px':'6px 8px',gap:'7px',justifyContent:jc,fontSize:'13px'}},React.createElement('div',{style:{width:'24px',height:'24px',borderRadius:'50%',flexShrink:0,background:selUser===u&&!showTeam?'var(--blue)':'#bdc1c6',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'10px',fontWeight:'bold'}},u.charAt(0).toUpperCase()),sidebar&&(u===me?.displayName?`Yo (${u})`:u)))
       ),
-      isAdmin&&React.createElement('div',{className:'sb-item',onClick:()=>setShowAdmin(true),style:{padding:sidebar?'11px 14px':'11px 8px',gap:'9px',justifyContent:jc,borderTop:'1px solid var(--border)',color:'var(--gold)',minHeight:'46px',fontWeight:'600'}},
+      !isMobile&&isAdmin&&React.createElement('div',{className:'sb-item',onClick:()=>setShowAdmin(true),style:{padding:sidebar?'11px 14px':'11px 8px',gap:'9px',justifyContent:jc,borderTop:'1px solid var(--border)',color:'var(--gold)',minHeight:'46px',fontWeight:'600'}},
         React.createElement(Ic,{name:'gear',size:18,style:{flexShrink:0}}),sidebar&&React.createElement('span',{style:{fontSize:'13px'}},'Admin Panel')),
-      React.createElement('div',{className:'sb-item',onClick:()=>setShowSettings(true),style:{padding:sidebar?'11px 14px':'11px 8px',gap:'9px',justifyContent:jc,borderTop:'1px solid var(--border)',color:'var(--text-secondary)',minHeight:'46px'}},
+      !isMobile&&React.createElement('div',{className:'sb-item',onClick:()=>setShowSettings(true),style:{padding:sidebar?'11px 14px':'11px 8px',gap:'9px',justifyContent:jc,borderTop:'1px solid var(--border)',color:'var(--text-secondary)',minHeight:'46px'}},
         React.createElement(Ic,{name:'user',size:18,style:{flexShrink:0}}),sidebar&&React.createElement('span',{style:{fontSize:'13px',fontWeight:'500'}},me?.displayName)),
       /* LIST POPUP */
       showListPop&&React.createElement('div',{onClick:e=>e.target===e.currentTarget&&setShowListPop(false),style:{position:'fixed',inset:0,background:'rgba(0,0,0,0.45)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1200}},
@@ -1673,8 +1691,10 @@ function App(){
       await postSlack(SLACK_TOKEN,SLACK_TODOLIST_CH,txt);showToast(`✅ Reporte ${type==='morning'?'matutino':'vespertino'} enviado`);
     };
     const genInvite=async()=>{const code=genCode();await set(ref(db,`${DB_INVITES}/${code}`),{createdBy:uid,createdAt:Date.now(),usedBy:null});showToast(`Código: ${code}`);};
-    return React.createElement('div',{onClick:e=>e.target===e.currentTarget&&setShowAdmin(false),style:{position:'fixed',inset:0,background:'rgba(0,0,0,0.4)',display:'flex',alignItems:'flex-start',justifyContent:'flex-end',zIndex:1000}},
-      React.createElement('div',{className:'modal-surface fade-up',style:{width:'440px',height:'100vh',background:'#fff',boxShadow:'-4px 0 32px rgba(0,0,0,0.18)',overflowY:'auto',padding:'24px'}},
+    const adminOverlayStyle=isMobile?{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000}:{position:'fixed',inset:0,background:'rgba(0,0,0,0.4)',display:'flex',alignItems:'flex-start',justifyContent:'flex-end',zIndex:1000};
+    const adminPanelStyle=isMobile?{width:'92vw',maxHeight:'85vh',height:'auto',background:'#fff',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-xl)',overflowY:'auto',padding:'24px'}:{width:'440px',height:'100vh',background:'#fff',boxShadow:'-4px 0 32px rgba(0,0,0,0.18)',overflowY:'auto',padding:'24px'};
+    return React.createElement('div',{onClick:e=>e.target===e.currentTarget&&setShowAdmin(false),style:adminOverlayStyle},
+      React.createElement('div',{className:'modal-surface fade-up',style:adminPanelStyle},
         React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'20px'}},
           React.createElement('div',null,React.createElement('div',{style:{fontSize:'15px',fontWeight:'700',letterSpacing:'-0.02em',display:'flex',alignItems:'center',gap:'8px'}},React.createElement(Ic,{name:'gear',size:16}),'Admin Panel'),React.createElement('div',{style:{fontSize:'10px',color:'var(--gold)',fontWeight:'700',letterSpacing:'0.06em',textTransform:'uppercase',marginTop:'2px'}},'Administrador')),
           React.createElement('button',{onClick:()=>setShowAdmin(false),className:'icon-btn',style:{width:32,height:32}},React.createElement(Ic,{name:'close',size:15}))

@@ -482,8 +482,9 @@ input:focus, textarea:focus, select:focus {
   .bottom-nav { display: flex; }
 
   /* Sidebar becomes a drawer from the left */
-  .app-sidebar-desktop { display: none !important; }
+  .app-sidebar-desktop:not(.open) { display: none !important; }
   .app-sidebar-drawer {
+    display: flex !important;
     position: fixed !important;
     top: 0; left: -100%; bottom: 0;
     width: 280px !important; min-width: 280px !important; max-width: 280px !important;
@@ -1933,6 +1934,7 @@ function App(){
           React.createElement('input',{value:editMemberId||me?.slackMemberId||'',onChange:e=>setEditMemberId(e.target.value),placeholder:'U0XXXXXXXXX',style:{width:'100%',padding:'9px 11px',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',fontSize:'13px',outline:'none',fontFamily:'monospace',letterSpacing:'0.04em'}}),
           React.createElement(Btn,{variant:'primary',size:'sm',onClick:async()=>{const id=(editMemberId||'').trim();await update(ref(db,`${DB_USERS}/${uid}`),{slackMemberId:id});showToast(id?'✅ Member ID guardado':'Member ID eliminado');},style:{marginTop:'8px',width:'100%'}},'Guardar Member ID')
         ),
+        isAdmin&&React.createElement(Btn,{variant:'primary',onClick:()=>{setShowSettings(false);setShowAdmin(true);},style:{width:'100%',padding:'10px',marginBottom:'8px',background:'var(--gold)',borderColor:'var(--gold)',color:'#fff'}},React.createElement(Ic,{name:'gear',size:14}),' Panel de administración'),
         React.createElement(Btn,{variant:'danger',onClick:()=>{localStorage.clear();location.reload();},style:{width:'100%',padding:'10px',marginBottom:'8px'}},'Cerrar sesión'),
         React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'8px',padding:'10px',background:'var(--gray-light)',borderRadius:'var(--radius-md)'}},
           React.createElement('div',null,
